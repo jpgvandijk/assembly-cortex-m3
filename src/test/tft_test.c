@@ -16,6 +16,7 @@
 #include "tft.h"
 
 // Includes (data)
+#include "data/SystemFont.h"
 #include "data/Consolas10.h"
 #include "data/Arial12.h"
 #include "data/ComicSansMS24.h"
@@ -109,7 +110,11 @@ void TaskTFT (uint32_t arg)
 	TFT_SetArea(0, 319, 0, 239);
 	TFT_Color = (0x1F << 11);
 	TFT_SelectFont(Calibri80);
-	TFT_PrintString(20, 100, "1.783");
+	TFT_PrintString(20, 20, "1.783");
+	TFT_SelectFont(SystemFont);
+	TFT_PrintString(20, 192, "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+	TFT_PrintString(20, 208, "abcdefghijklmnopqrstuvwxyz");
+	TFT_PrintString(20, 224, "0123456789!@#$%^&*()_+-=[]{}");
 	KERNEL_SVCForceContextSwitchDelay(10000);
 	
 	while (1)
