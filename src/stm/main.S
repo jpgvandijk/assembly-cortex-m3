@@ -32,6 +32,8 @@ main:
 			bl			SystemGetClock
 
 			@ Enable required GPIO
+			movs		r0, PERIPHERAL_AFIO
+			bl			SystemEnablePeripheral
 			movs		r0, PERIPHERAL_IOPA
 			bl			SystemEnablePeripheral
 			movs		r0, PERIPHERAL_IOPB
@@ -49,6 +51,7 @@ main:
 			@bl			onewire_test
 			@bl			spi1_flash_test
 			@bl			tft_test
+			@bl			touch_test
 
 			@ Enter an infinite loop in case the test application returns
 			b			.
