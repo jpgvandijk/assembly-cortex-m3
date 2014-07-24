@@ -196,6 +196,37 @@
 #define GPIOG 								6
 
 //----------------------------------------------------
+// AFIO
+//----------------------------------------------------
+
+// Base address
+#define STM_AFIO		0x40010000
+
+// Registers
+#define AFIO_EVCR		(STM_AFIO + 0x00)
+#define AFIO_MAPR		(STM_AFIO + 0x04)
+#define AFIO_EXTICR1	(STM_AFIO + 0x08)
+#define AFIO_EXTICR2	(STM_AFIO + 0x0C)
+#define AFIO_EXTICR3	(STM_AFIO + 0x10)
+#define AFIO_EXTICR4	(STM_AFIO + 0x14)
+#define AFIO_MAPR2		(STM_AFIO + 0x1C)
+
+//----------------------------------------------------
+// EXTI
+//----------------------------------------------------
+
+// Base address
+#define STM_EXTI		0x40010400
+
+// Registers
+#define EXTI_IMR		(STM_EXTI + 0x00)
+#define EXTI_EMR		(STM_EXTI + 0x04)
+#define EXTI_RTSR		(STM_EXTI + 0x08)
+#define EXTI_FTSR		(STM_EXTI + 0x0C)
+#define EXTI_SWIER		(STM_EXTI + 0x10)
+#define EXTI_PR			(STM_EXTI + 0x14)
+
+//----------------------------------------------------
 // TIM2 to TIM5
 //----------------------------------------------------
 

@@ -216,6 +216,10 @@ FLASH_ReadBytes:
 			ldr			r1, [r0, SPIx_CR1]
 			bics		r1, (0x0040 | (1 << 10))
 			str			r1, [r0, SPIx_CR1]
+1:			ldr			r1, [r0, SPIx_SR]
+			tst			r1, #(1 << 0)
+			beq			1b
+			ldr			r1, [r0, SPIx_DR]
 
 			@ Restore registers and return
 			pop			{r4, r5, r6, pc}
