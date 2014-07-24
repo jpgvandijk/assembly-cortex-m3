@@ -123,6 +123,8 @@ SVC_HandlerScheduler_ForceContextSwitch:
 			@ Determine reason of context switch
 			ldr			r1, [r0, KERNEL_StackR0]
 			cbz			r1, _svc_handler_scheduler_pendsv_
+			cmp			r1, SVC_ForceContextSwitchIndefinitely
+			beq			_svc_handler_scheduler_indefinitely_
 			cmp			r1, SVC_ForceContextSwitchEndTask
 			beq			_svc_handler_scheduler_kill_
 
@@ -182,6 +184,14 @@ _svc_handler_scheduler_kill_:
 			adds		r0, KERNEL_StackSizeException
 			subs		r0, r1
 			bl			KERNEL_Free
+			b			_svc_handler_scheduler_pendsv_
+
+_svc_handler_scheduler_indefinitely_:
+
+			@ Get currently running task
+			ldr			r0, =KERNEL_TaskRunning
+			ldr			r0, [r0]
+			bl			KERNEL_RemoveTaskFromReadyList
 
 			@ Pend the PendSV exception for the context switch
 			@ NVIC_EXCSetPendingPendSV copied to avoid branches etc.

@@ -45,7 +45,8 @@
 #define SVC_ForceContextSwitchSimple 				0
 #define SVC_ForceContextSwitchDelay 				1
 #define SVC_ForceContextSwitchPeriodic 				2
-#define SVC_ForceContextSwitchEndTask 				3
+#define SVC_ForceContextSwitchIndefinitely			3
+#define SVC_ForceContextSwitchEndTask 				4
 
 #define SVC_IRQDisable								0
 #define SVC_IRQEnable								1
@@ -144,6 +145,7 @@ __attribute__ ((noinline)) static void KERNEL_SVCIRQ (uint32_t IRQnumber, uint32
 #define KERNEL_SVCForceContextSwitchSimple()		KERNEL_SVCForceContextSwitch(0, 0)
 #define KERNEL_SVCForceContextSwitchDelay(ms)		KERNEL_SVCForceContextSwitch(1, ms)
 #define KERNEL_SVCForceContextSwitchPeriodic(ms)	KERNEL_SVCForceContextSwitch(2, ms)
+#define KERNEL_SVCForceContextSwitchIndefinitely()	KERNEL_SVCForceContextSwitch(3, 0)
 
 #define KERNEL_SVCIRQDisable(n)						KERNEL_SVCIRQ(n, 0)
 #define KERNEL_SVCIRQEnable(n)						KERNEL_SVCIRQ(n, 1)
