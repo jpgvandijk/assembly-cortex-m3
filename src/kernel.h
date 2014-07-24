@@ -39,12 +39,16 @@
 #define SVC_ForceContextSwitch 						0
 #define SVC_Alloc 									1
 #define SVC_Free 									2
-#define KERNEL_SVCMaxAllowedNumber 					2
+#define SVC_IRQ										3
+#define KERNEL_SVCMaxAllowedNumber 					3
 
 #define SVC_ForceContextSwitchSimple 				0
 #define SVC_ForceContextSwitchDelay 				1
 #define SVC_ForceContextSwitchPeriodic 				2
 #define SVC_ForceContextSwitchEndTask 				3
+
+#define SVC_IRQDisable								0
+#define SVC_IRQEnable								1
 
 // Definitions for the heap
 #define KERNEL_HeapLinkStructFieldNext 				0	// Must be 0!
@@ -127,6 +131,11 @@ __attribute__ ((noinline)) static void KERNEL_SVCFree (uint32_t * ptr)
 	__asm __volatile ("svc %[immediate]"::[immediate] "I" (0x02));
 }
 
+__attribute__ ((noinline)) static void KERNEL_SVCIRQ (uint32_t IRQnumber, uint32_t state)
+{
+	__asm __volatile ("svc %[immediate]"::[immediate] "I" (0x03));
+}
+
 /************************************************************
 * KERNEL_EXCEPTIONS.S										*
 ************************************************************/
@@ -135,6 +144,9 @@ __attribute__ ((noinline)) static void KERNEL_SVCFree (uint32_t * ptr)
 #define KERNEL_SVCForceContextSwitchSimple()		KERNEL_SVCForceContextSwitch(0, 0)
 #define KERNEL_SVCForceContextSwitchDelay(ms)		KERNEL_SVCForceContextSwitch(1, ms)
 #define KERNEL_SVCForceContextSwitchPeriodic(ms)	KERNEL_SVCForceContextSwitch(2, ms)
+
+#define KERNEL_SVCIRQDisable(n)						KERNEL_SVCIRQ(n, 0)
+#define KERNEL_SVCIRQEnable(n)						KERNEL_SVCIRQ(n, 1)
 
 // Global variables
 extern uint64_t KERNEL_Time;
@@ -148,6 +160,7 @@ extern void PendSV_Handler (void);
 void KERNEL_SVCForceContextSwitch (uint32_t type, uint32_t ms);
 uint32_t * KERNEL_SVCAlloc (uint32_t bytes);
 void KERNEL_SVCFree (uint32_t * ptr);
+void KERNEL_SVCIRQ (uint32_t IRQnumber, uint32_t state);
 
 /************************************************************
 * KERNEL_HEAP.S												*

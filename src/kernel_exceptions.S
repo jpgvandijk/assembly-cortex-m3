@@ -75,6 +75,7 @@ SVC_HandlerBranchTable:
 			.byte		((SVC_HandlerScheduler - SVC_HandlerBranchTable) / 2)
 			.byte		((SVC_HandlerAlloc - SVC_HandlerBranchTable) / 2)
 			.byte		((SVC_HandlerFree - SVC_HandlerBranchTable) / 2)
+			.byte		((SVC_HandlerIRQ - SVC_HandlerBranchTable) / 2)
 			.align		1
 
 			@-----------------------------------------------------------@
@@ -215,7 +216,26 @@ SVC_HandlerFree:
 			pop			{pc}
 
 			@-----------------------------------------------------------@
+			
+SVC_HandlerIRQ:
 
+			@ r0 contains the stack pointer used during the exception entry
+			@ Use this to get and store the function arguments/return values
+				
+			@ FIXME: protect some IRQs from changing state?
+			push		{lr}
+			ldr			r1, [r0, KERNEL_StackR1]
+			ldr			r0, [r0, KERNEL_StackR0]
+			cbz			r1, _svc_handler_irq_disable
+_svc_handler_irq_enable:
+			bl			NVIC_IRQEnable
+			pop			{pc}
+_svc_handler_irq_disable:
+			bl			NVIC_IRQDisable
+			pop			{pc}
+
+			@-----------------------------------------------------------@
+			
 SVC_HandlerInvalidRequest:
 			bx			lr
 
