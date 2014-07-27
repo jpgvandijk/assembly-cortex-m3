@@ -9,8 +9,11 @@
 // Includes
 #include "task_touch.h"
 
-// Global variables
+// Global constants
 const KERNEL_TaskDescriptor TaskDescriptor_TaskTouch = {TaskTouch, 0, TASK_TOUCH_STACK_SIZE, TASK_TOUCH_PRIORITY, "Touch"};
+
+// Global variables
+volatile uint8_t TaskTouch_Mode = TASK_TOUCH_MODE_ANALYSE;		// No lock, since only read in this task (always atomic)
 
 // Private global variables
 static KERNEL_TaskTableEntry * task;
@@ -21,6 +24,18 @@ static struct
 	uint8_t					rx_index;							// Points to where it can immediately read
 	TouchMessage_TypeDef	messages[TASK_TOUCH_QUEUE_SIZE];	// The actual queue
 } queue;
+
+// Private global variables (since practically always active)
+static TouchMessage_TypeDef touch;
+static uint32_t time;
+static uint16_t measurement[4];
+static uint32_t pressure;
+static uint16_t x;
+static uint16_t y;
+static int16_t dx;
+static int16_t dy;
+static uint16_t abs_dx;
+static uint16_t abs_dy;
 
 // Private functions
 static void TaskTouch_Send (TouchMessage_TypeDef* message);
@@ -100,12 +115,7 @@ uint32_t TaskTouch_Receive (TouchMessage_TypeDef* message)
 
 void TaskTouch (uint32_t arg)
 {
-	// Local variables
-	uint32_t time;
-	TouchMessage_TypeDef touch;
 	touch.type = TOUCH_TYPE_INTERNAL_RESET;
-
-	// Run every TASK_TOUCH_PERIOD ms
 	while (1)
 	{
 		// Check if screen is no longer touched
@@ -155,25 +165,40 @@ void TaskTouch (uint32_t arg)
 
 			case TOUCH_TYPE_SWIPE_RIGHT:
 
-				// TODO: queue
+				// Report average line + speed
+				touch.y = (touch.y + y) >> 1;
+				touch.x_speed = abs_dx / time;
 				TaskTouch_Send(&touch);
 				break;
 
 			case TOUCH_TYPE_SWIPE_LEFT:
 
-				// TODO: queue
+				// Report average line + speed
+				touch.y = (touch.y + y) >> 1;
+				touch.x_speed = abs_dx / time;
 				TaskTouch_Send(&touch);
 				break;
 
 			case TOUCH_TYPE_SWIPE_DOWN:
 
-				// TODO: queue
+				// Report average line + speed
+				touch.x = (touch.x + x) >> 1;
+				touch.y_speed = abs_dy / time;
 				TaskTouch_Send(&touch);
 				break;
 
 			case TOUCH_TYPE_SWIPE_UP:
 
-				// TODO: queue
+				// Report average line + speed
+				touch.x = (touch.x + x) >> 1;
+				touch.y_speed = abs_dy / time;
+				TaskTouch_Send(&touch);
+				break;
+
+			case TOUCH_TYPE_RAW:
+
+				// Send end signal
+				touch.type = TOUCH_TYPE_RAW_END;
 				TaskTouch_Send(&touch);
 				break;
 
@@ -188,17 +213,26 @@ void TaskTouch (uint32_t arg)
 			KERNEL_SVCIRQDisable(TOUCH_IRQ_NUMBER);
 			task = 0;
 
-			// Start new analyses
-			touch.type = TOUCH_TYPE_INTERNAL_BEGIN;
+			// Change operating mode if necessary
+			if (TaskTouch_Mode == TASK_TOUCH_MODE_ANALYSE)
+			{
+				// Start new analyses
+				touch.type = TOUCH_TYPE_INTERNAL_BEGIN;
+			}
+			else
+			{
+				// Send RAW data
+				touch.type = TOUCH_TYPE_RAW;
+			}
 		}
 
-		// Screen is touched, measure x, y, z1 and z2
-		uint16_t measurement[4];
 _measure_:
+
+		// Screen is touched, measure x, y, z1 and z2
 		TOUCH_Read(measurement, 4);
 
 		// Determine the pressure
-		uint32_t pressure = 0;
+		pressure = 0;
 		if ((measurement[2] != 0) && (measurement[3] > measurement[2]))
 		{
 			pressure = measurement[0] * TOUCH_SCREEN_RESISTANCE;
@@ -213,12 +247,12 @@ _measure_:
 			((measurement[1] >= TOUCH_X_MIN) && (measurement[0] >= TOUCH_Y_MIN) && (measurement[1] < TOUCH_X_MAX) && (measurement[0] < TOUCH_Y_MAX)))
 		{
 			// Determine the coordinate
-			uint16_t x = 319 - (measurement[1] - TOUCH_X_MIN) / TOUCH_X_SCALE;
-			uint16_t y = (measurement[0] - TOUCH_Y_MIN) / TOUCH_Y_SCALE;
-			int16_t dx = x - touch.x;
-			int16_t dy = y - touch.y;
-			uint16_t abs_dx = (dx < 0) ? -dx : dx;
-			uint16_t abs_dy = (dy < 0) ? -dy : dy;
+			x = 319 - (measurement[1] - TOUCH_X_MIN) / TOUCH_X_SCALE;
+			y = (measurement[0] - TOUCH_Y_MIN) / TOUCH_Y_SCALE;
+			dx = x - touch.x;
+			dy = y - touch.y;
+			abs_dx = (dx < 0) ? -dx : dx;
+			abs_dy = (dy < 0) ? -dy : dy;
 
 			// Analyse movement
 			time++;
@@ -329,6 +363,14 @@ _measure_:
 				// Check if still moving in the same direction
 				if (!(-dy > 2*abs_dx))
 					touch.type = TOUCH_TYPE_INTERNAL_RESET;
+				break;
+
+			case TOUCH_TYPE_RAW:
+
+				// Send coordinate
+				touch.x = x;
+				touch.y = y;
+				TaskTouch_Send(&touch);
 				break;
 
 			default:
