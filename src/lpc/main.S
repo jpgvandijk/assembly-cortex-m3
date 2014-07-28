@@ -36,6 +36,7 @@ main:
 			@bl			DEBUG_HeapTest
 			@bl			DEBUG_HeapTestMerge
 			@bl			onewire_test
+			@bl			i2c1_test
 
 			@ Enter an infinite loop in case the test application returns
 			b			.
