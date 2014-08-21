@@ -24,6 +24,11 @@ extern void SPI1_GetExclusiveAccess (uint32_t baudrate);
 extern void SPI1_ClearExclusiveAccess (void);
 extern void SPI1_Init (void);
 extern uint8_t SPI1_Transfer (uint8_t data);
+extern void SPI1_EnableDefault (void);
+extern void SPI1_DisableDefault (void);
+extern void SPI1_EnableRXOnlyWithDMA (uint8_t * buffer, uint32_t count);
+extern void SPI1_WaitRXOnlyWithDMA (void);
+extern void SPI1_DisableRXOnlyWithDMA (void);
 
 #endif//__ASSEMBLER__
 

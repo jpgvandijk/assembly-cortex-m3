@@ -77,10 +77,7 @@ FLASH_ReadByte:
 			cpy			r4, r0
 
 			@ Enable the SPI
-			ldr			r0, =STM_SPI1
-			ldr			r1, [r0, SPIx_CR1]
-			orrs		r1, 0x0040
-			str			r1, [r0, SPIx_CR1]
+			bl			SPI1_EnableDefault
 
 			@ Select the chip
 			ldr			r0, =GPIOA_BRR
@@ -109,10 +106,7 @@ FLASH_ReadByte:
 			str			r1, [r2]
 
 			@ Disable the SPI and return to normal mode
-			ldr			r2, =STM_SPI1
-			ldr			r1, [r2, SPIx_CR1]
-			bics		r1, (0x0040 | (1 << 10))
-			str			r1, [r2, SPIx_CR1]
+			bl			SPI1_DisableDefault
 
 			@ Restore registers and return with the data byte in r0
 			pop			{r4, pc}
@@ -130,18 +124,13 @@ FLASH_ReadBytes:
 			@ r1: write address
 			@ r2: count
 
-			@ Save registers
+			@ Save registers and arguments
 			push		{r4, r5, r6, lr}
-
-			@ Save arguments
 			push		{r0, r1, r2}
 			pop			{r4, r5, r6}
 
 			@ Enable the SPI
-			ldr			r0, =STM_SPI1
-			ldr			r1, [r0, SPIx_CR1]
-			orrs		r1, 0x0040
-			str			r1, [r0, SPIx_CR1]
+			bl			SPI1_EnableDefault
 
 			@ Select the chip
 			ldr			r0, =GPIOA_BRR
@@ -164,48 +153,15 @@ FLASH_ReadBytes:
 			bl			SPI1_Transfer
 
 			@ Disable the SPI to setup the DMA
-			ldr			r0, =STM_SPI1
-1:			ldr			r1, [r0, SPIx_SR]
-			tst			r1, #(1 << 7)
-			bne			1b
-			ldr			r1, [r0, SPIx_DR]
-			ldr			r1, [r0, SPIx_SR]
-			ldr			r1, [r0, SPIx_CR1]
-			bics		r1, 0x0040
-			str			r1, [r0, SPIx_CR1]
+			bl			SPI1_DisableDefault
 
 			@ Setup the DMA
-			ldr			r1, =STM_DMA1
-			adds		r2, r0, SPIx_DR
-			str			r2, [r1, DMAx_CPAR2]
-			str			r5, [r1, DMAx_CMAR2]
-			str			r6, [r1, DMAx_CNDTR2]
-			movs		r2, #0x2080
-			str			r2, [r1, DMAx_CCR2]
-
-			@ Clear the flags and enable the DMA channel, high priority
-			movs		r3, #0x10
-			str			r3, [r1, DMAx_IFCR]
-			orrs		r2, #0x0001
-			str			r2, [r1, DMAx_CCR2]
-
-			@ Enable the SPI in RX only mode with DMA on the RX channel
-			ldr			r2, [r0, SPIx_CR1]
-			orrs		r2, #(1 << 10)
-			str			r2, [r0, SPIx_CR1]
-			movs		r3, #0x01
-			str			r3, [r0, SPIx_CR2]
-			orrs		r2, #(1 << 6)
-			str			r2, [r0, SPIx_CR1]
+			cpy			r0, r5
+			cpy			r1, r6
+			bl			SPI1_EnableRXOnlyWithDMA
 
 			@ Wait for the DMA transfers to complete
-2:			ldr			r2, [r1, DMAx_ISR]
-			tst			r2, #(1 << 5)
-			beq			2b
-
-			@ Disable the DMA
-			movs		r2, #0
-			str			r2, [r1, DMAx_CCR2]
+			bl			SPI1_WaitRXOnlyWithDMA
 
 			@ Deselect the chip
 			ldr			r2, =GPIOA_BSRR
@@ -213,13 +169,7 @@ FLASH_ReadBytes:
 			str			r1, [r2]
 
 			@ Disable the SPI and return to normal mode
-			ldr			r1, [r0, SPIx_CR1]
-			bics		r1, (0x0040 | (1 << 10))
-			str			r1, [r0, SPIx_CR1]
-1:			ldr			r1, [r0, SPIx_SR]
-			tst			r1, #(1 << 0)
-			beq			1b
-			ldr			r1, [r0, SPIx_DR]
+			bl			SPI1_DisableRXOnlyWithDMA
 
 			@ Restore registers and return
 			pop			{r4, r5, r6, pc}

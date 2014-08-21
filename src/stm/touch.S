@@ -109,10 +109,7 @@ TOUCH_Read:
 			bl			SPI1_GetExclusiveAccess
 
 			@ Enable the SPI
-			ldr			r0, =STM_SPI1
-			ldr			r1, [r0, SPIx_CR1]
-			orrs		r1, 0x0040
-			str			r1, [r0, SPIx_CR1]
+			bl			SPI1_EnableDefault
 
 			@ Select the chip
 			ldr			r0, =GPIOB_BRR
@@ -154,10 +151,7 @@ TOUCH_Read:
 			str			r1, [r0]
 			
 			@ Disable the SPI and return to normal mode
-			ldr			r0, =STM_SPI1
-			ldr			r1, [r0, SPIx_CR1]
-			bics		r1, (0x0040 | (1 << 10))
-			str			r1, [r0, SPIx_CR1]
+			bl			SPI1_DisableDefault
 
 			@ Release exclusive access to the SPI module
 			bl			SPI1_ClearExclusiveAccess
