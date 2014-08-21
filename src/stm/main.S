@@ -52,6 +52,7 @@ main:
 			@bl			spi1_flash_test
 			@bl			tft_test
 			@bl			touch_test
+			@bl			sdcard_test
 
 			@ Enter an infinite loop in case the test application returns
 			b			.
