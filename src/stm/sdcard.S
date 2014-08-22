@@ -24,9 +24,11 @@
 			.global		SDCARD_Command
 			.global		SDCARD_Delay
 			.global		SDCARD_Read
+			.global		SDCARD_Write
 
 			@ Variables
-			.global		SDCARD_Buffer
+			.global		SDCARD_ReadBuffer
+			.global		SDCARD_WriteBuffer
 
 
 
@@ -41,9 +43,13 @@
 			#else
 			.section	.noinit.SDCARD_Buffer
 			#endif
-			.align		2
-			.type		SDCARD_Buffer, "object"
+			.type		SDCARD_ReadBuffer, "object"
+			.type		SDCARD_WriteBuffer, "object"
 SDCARD_Buffer:
+			.space		1
+SDCARD_WriteBuffer:
+			.space		SDCARD_BLOCK_SIZE
+SDCARD_ReadBuffer:
 			.space		SDCARD_BLOCK_SIZE
 
 
@@ -62,6 +68,11 @@ SDCARD_Init:
 
 			@ Save registers
 			push		{lr}
+
+			@ Initialize variables
+			ldr			r0, =SDCARD_Buffer
+			movs		r1, #0xFE
+			strb		r1, [r0]
 
 			@ Initialize the SS pin as open-drain to detect a card
 			movs		r0, GPIOD
@@ -308,6 +319,8 @@ SDCARD_Read:
 			@ Save registers
 			push		{r4, lr}
 
+			@ TODO: add exclusive access in read function
+
 			@ Calculate byte address
 			lsls		r1, r0, SDCARD_BLOCK_SIZE_LOG
 			movs		r0, SDCARD_CMD17
@@ -338,7 +351,7 @@ SDCARD_Read:
 			bl			SPI1_DisableDefault
 
 			@ Setup the DMA
-			ldr			r0, =SDCARD_Buffer
+			ldr			r0, =SDCARD_ReadBuffer
 			movs		r1, SDCARD_BLOCK_SIZE
 			bl			SPI1_EnableRXOnlyWithDMA
 
@@ -359,6 +372,60 @@ _sdcard_read_error_:
 
 			@ Restore registers and return
 			pop			{r4, pc}
+
+
+
+
+
+			.section	.text.SDCARD_Write
+			.type		SDCARD_Write, "function"
+SDCARD_Write:
+
+			@ Argument:
+			@ r0: block number
+
+			@ Save registers
+			push		{lr}
+
+			@ TODO: add exclusive access in write function
+
+			@ Calculate byte address
+			lsls		r1, r0, SDCARD_BLOCK_SIZE_LOG
+			movs		r0, SDCARD_CMD24
+			bl			SDCARD_Command
+			cmp			r0, #0
+			bne			_sdcard_write_error_
+
+			@ Provide additional byte
+			movs		r0, #1
+			bl			SDCARD_Delay
+
+			@ Select the chip to continue the transfer
+			ldr			r0, =GPIOD_BRR
+			movs		r1, (1 << 6)
+			str			r1, [r0]
+
+			@ Enable the SPI with DMA
+			@ Send token 0xFE + 512 bytes + 2 bytes CRC
+			ldr			r0, =(SDCARD_WriteBuffer - 1)
+			movw		r1, (SDCARD_BLOCK_SIZE + 3)
+			bl			SPI1_EnableTXOnlyWithDMA
+
+			@ Wait for the DMA transfers to complete
+			bl			SPI1_WaitTXOnlyWithDMA
+
+			@ Disable the SPI and return to normal mode
+			bl			SPI1_DisableTXOnlyWithDMA
+
+			@ Deselect the chip
+			ldr			r2, =GPIOD_BSRR
+			movs		r1, (1 << 6)
+			str			r1, [r2]
+
+_sdcard_write_error_:
+
+			@ Restore registers and return
+			pop			{pc}
 
 
 

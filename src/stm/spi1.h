@@ -12,7 +12,7 @@
 #include "kernel.h"
 
 // Configuration
-#define SPI1_EXCLUSIVE_ACCESS_DELAY 			1
+#define SPI1_EXCLUSIVE_ACCESS_DELAY 			0
 
 #ifndef __ASSEMBLER__
 
@@ -29,6 +29,9 @@ extern void SPI1_DisableDefault (void);
 extern void SPI1_EnableRXOnlyWithDMA (uint8_t * buffer, uint32_t count);
 extern void SPI1_WaitRXOnlyWithDMA (void);
 extern void SPI1_DisableRXOnlyWithDMA (void);
+extern void SPI1_EnableTXOnlyWithDMA (uint8_t * buffer, uint32_t count);
+extern void SPI1_WaitTXOnlyWithDMA (void);
+extern void SPI1_DisableTXOnlyWithDMA (void);
 
 #endif//__ASSEMBLER__
 

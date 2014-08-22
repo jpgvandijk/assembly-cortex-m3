@@ -43,6 +43,9 @@
 			.global		SPI1_EnableRXOnlyWithDMA
 			.global		SPI1_WaitRXOnlyWithDMA
 			.global		SPI1_DisableRXOnlyWithDMA
+			.global		SPI1_EnableTXOnlyWithDMA
+			.global		SPI1_WaitTXOnlyWithDMA
+			.global		SPI1_DisableTXOnlyWithDMA
 
 
 
@@ -325,6 +328,88 @@ SPI1_DisableRXOnlyWithDMA:
 			tst			r0, #(1 << 0)
 			beq			0b
 			ldr			r0, [r1, SPIx_DR]
+
+			@ Return
+			bx			lr
+
+
+
+
+
+			.section	.text.SPI1_EnableTXOnlyWithDMA
+			.type		SPI1_EnableTXOnlyWithDMA, "function"
+SPI1_EnableTXOnlyWithDMA:
+
+			@ Arguments:
+			@ r0: source address
+			@ r1: count
+
+			@ Setup the DMA
+			ldr			r2, =STM_DMA1
+			ldr			r3, =(STM_SPI1 + SPIx_DR)
+			str			r3, [r2, DMAx_CPAR3]
+			str			r0, [r2, DMAx_CMAR3]
+			str			r1, [r2, DMAx_CNDTR3]
+			movw		r0, #0x2090
+			str			r0, [r2, DMAx_CCR3]
+
+			@ Enable the SPI with DMA on the TX channel
+			subs		r3, SPIx_DR
+			movs		r1, #0x02
+			str			r1, [r3, SPIx_CR2]
+			ldr			r1, [r3, SPIx_CR1]
+			orrs		r1, #(1 << 6)
+			str			r1, [r3, SPIx_CR1]
+
+			@ Clear the flags and enable the DMA channel, high priority
+			movs		r1, #0x100
+			str			r1, [r2, DMAx_IFCR]
+			orrs		r0, #0x0001
+			str			r0, [r2, DMAx_CCR3]
+
+			@ Return
+			bx			lr
+
+
+
+
+
+			.section	.text.SPI1_WaitTXOnlyWithDMA
+			.type		SPI1_WaitTXOnlyWithDMA, "function"
+SPI1_WaitTXOnlyWithDMA:
+
+			@ Wait for the DMA transfers to complete
+			ldr			r1, =STM_DMA1
+0:			ldr			r0, [r1, DMAx_ISR]
+			tst			r0, #(1 << 9)
+			beq			0b
+
+			@ Return
+			bx			lr
+
+
+
+
+
+			.section	.text.SPI1_DisableTXOnlyWithDMA
+			.type		SPI1_DisableTXOnlyWithDMA, "function"
+SPI1_DisableTXOnlyWithDMA:
+
+			@ Disable the DMA
+			ldr			r1, =STM_DMA1
+			movs		r0, #0
+			str			r0, [r1, DMAx_CCR3]
+
+			@ Disable the SPI and return to normal mode
+			ldr			r0, =STM_SPI1
+0:			ldr			r1, [r0, SPIx_SR]
+			tst			r1, #(1 << 7)
+			bne			0b
+			ldr			r1, [r0, SPIx_DR]
+			ldr			r1, [r0, SPIx_SR]
+			ldr			r1, [r0, SPIx_CR1]
+			bics		r1, (0x0040 | (1 << 10))
+			str			r1, [r0, SPIx_CR1]
 
 			@ Return
 			bx			lr
