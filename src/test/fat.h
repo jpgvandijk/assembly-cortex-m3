@@ -61,6 +61,7 @@ uint32_t FAT_Allocate (void);
 uint32_t FAT_Link (uint32_t first, uint32_t add);
 uint32_t FAT_DirectoryExtend (uint32_t cluster);
 uint32_t FAT_DirectoryEntryGetStartCluster (FAT_DirectoryEntry_TypeDef * entry);
+void FAT_DirectoryEntrySetStartCluster (FAT_DirectoryEntry_TypeDef * entry, uint32_t cluster);
 void FAT_DirectoryEntryPrintDOSName (FAT_DirectoryEntry_TypeDef * entry);
 void FAT_DirectoryEntryGatherLFN (FAT_DirectoryEntry_TypeDef * entry);
 void FAT_DirectoryEntryScatterLFN (FAT_DirectoryEntry_TypeDef * entry, char * name);

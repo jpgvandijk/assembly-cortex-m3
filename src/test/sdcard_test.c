@@ -88,7 +88,7 @@ void TaskSDCard (uint32_t arg)
 	// cd "System Volume Information"
 	Print(printer, PRINT_TEXT, (PrintArgument) "\n\n> cd \"System Volume Information\"");
 	cluster = FAT_DirectoryFindName(FAT_Partition.RootCluster, FAT_DIRECTORY_FIND_DIRECTORY, "System Volume Information");
-	if (cluster == 0) return;
+	if (cluster == 0xFFFFFFFF) return;
 
 	// ls
 	Print(printer, PRINT_TEXT, (PrintArgument) "\n> ls -files\n");
@@ -101,6 +101,7 @@ void TaskSDCard (uint32_t arg)
 	Print(printer, PRINT_TEXT, (PrintArgument) "\n\n Creating file...");
 	FAT_DirectoryAddItem(cluster, "New Text Document.txt", 0x00);
 	FAT_DirectoryAddItem(cluster, "simple.TXT", 0x00);
+	FAT_DirectoryAddItem(cluster, "My Folder", 0x10);
 
 	// ls
 	Print(printer, PRINT_TEXT, (PrintArgument) "\n> ls -all\n");

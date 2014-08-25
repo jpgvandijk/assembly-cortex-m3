@@ -61,6 +61,14 @@ static void SDCARD_CopyReadBufferToWriteBuffer (void)
 		*(((uint32_t *) SDCARD_WriteBuffer) + i) = *(((uint32_t *) SDCARD_ReadBuffer) + i);
 }
 
+static void SDCARD_ClearWriteBuffer (void)
+{
+	// Slightly more efficient word set
+	uint32_t i;
+	for (i = 0; i < 128; i++)
+		*(((uint32_t *) SDCARD_WriteBuffer) + i) = 0;
+}
+
 
 
 
@@ -311,6 +319,7 @@ uint32_t FAT_Link (uint32_t first, uint32_t add)
 
 uint32_t FAT_DirectoryExtend (uint32_t cluster)
 {
+	// Argument: if cluster is 0 the newCluster is not linked
 	// Return: 0 if error, newCluster otherwise
 	uint32_t result;
 
@@ -330,8 +339,9 @@ uint32_t FAT_DirectoryExtend (uint32_t cluster)
 			return 0;
 
 	// Link the new cluster
-	if (FAT_Link(cluster, newCluster) == 0)
-		return 0;
+	if (cluster != 0)
+		if (FAT_Link(cluster, newCluster) == 0)
+			return 0;
 
 	// No errors
 	return newCluster;
@@ -344,6 +354,16 @@ uint32_t FAT_DirectoryEntryGetStartCluster (FAT_DirectoryEntry_TypeDef * entry)
 		return entry->FileStartCluster;
 	else
 		return ((*(((uint16_t *) entry) + 10) << 16) | (entry->FileStartCluster));
+}
+
+void FAT_DirectoryEntrySetStartCluster (FAT_DirectoryEntry_TypeDef * entry, uint32_t cluster)
+{
+	// Starting cluster scattered over the entry for FAT32
+	entry->FileStartCluster = cluster & 0xFFFF;
+	if (FAT_Partition.Type == PARTITION_TYPE_FAT16)
+		*(((uint16_t *) entry) + 10) = 0;
+	else
+		*(((uint16_t *) entry) + 10) = (cluster >> 16) & 0x0FFF;
 }
 
 void FAT_DirectoryEntryPrintDOSName (FAT_DirectoryEntry_TypeDef * entry)
@@ -548,8 +568,7 @@ uint32_t FAT_DirectoryFindVolumeLabel (void)
 
 uint32_t FAT_DirectoryFindName (uint32_t cluster, uint32_t type, char * name)
 {
-	// Return: 0 if error/not found, cluster number otherwise
-	// FIXME: can't find root like this
+	// !!! Return: 0xFFFFFFFF if error/not found, cluster number otherwise
 
 	// Slow search
 	FAT_DirectoryFindSetup(cluster);
@@ -559,7 +578,7 @@ uint32_t FAT_DirectoryFindName (uint32_t cluster, uint32_t type, char * name)
 		if (StringCompare(name, &FAT_LFN_Buffer[FAT_LFN_Index]) == 0)
 			return FAT_DirectoryEntryGetStartCluster(((FAT_DirectoryEntry_TypeDef *) SDCARD_ReadBuffer) + FAT_DirectoryFind.Entry);
 	}
-	return 0;
+	return 0xFFFFFFFF;
 }
 
 uint32_t FAT_DirectoryFindContiguousEntries (uint32_t cluster, uint32_t required)
@@ -673,12 +692,12 @@ uint32_t FAT_DirectoryFindContiguousEntries (uint32_t cluster, uint32_t required
 
 uint32_t FAT_DirectoryAddItem (uint32_t cluster, char * name, uint8_t type)
 {
-	// Return: 0 if error
+	// Return: 0 if error, 1 if success (the FAT_DirectoryFind structure points to the short file name entry, or the cluster of the new directory)
 	uint32_t result;
 	uint32_t required;
 
 	// Check if the file already exists
-	if (FAT_DirectoryFindName(cluster, FAT_DIRECTORY_FIND_ANY, name) != 0)
+	if (FAT_DirectoryFindName(cluster, FAT_DIRECTORY_FIND_ANY, name) != 0xFFFFFFFF)
 		return 0;
 
 	// Determine whether LFN is required and prepare short name
@@ -790,6 +809,48 @@ uint32_t FAT_DirectoryAddItem (uint32_t cluster, char * name, uint8_t type)
 	SDCARD_CopyReadBufferToWriteBuffer();
 	if (SDCARD_Write(FAT_GetAddress(FAT_DirectoryFind.Cluster) + FAT_DirectoryFind.Sector) == 0)
 		return 0;
+
+	// Return with the FAT_DirectoryFind structure pointing to the short file name entry
+	FAT_DirectoryFind.Entry = (FAT_DirectoryFind.Entry + required - 1) & 0x0F;
+
+	// In case a directory was added, add a file with the "." and ".." entries
+	if ((type & 0x58) == 0x10)
+	{
+		// Allocate a cluster
+		uint32_t newCluster = FAT_DirectoryExtend(0);
+		if (newCluster == 0)
+			return 0;
+
+		// Add the "." and ".." entries
+		uint32_t i;
+		SDCARD_ClearWriteBuffer();
+		SDCARD_WriteBuffer[0] = '.';
+		for (i = 1; i < 11; i++)
+			SDCARD_WriteBuffer[i] = ' ';
+		SDCARD_WriteBuffer[11] = 0x10;
+		SDCARD_WriteBuffer[32] = '.';
+		SDCARD_WriteBuffer[33] = '.';
+		for (i = 34; i < 43; i++)
+			SDCARD_WriteBuffer[i] = ' ';
+		SDCARD_WriteBuffer[43] = 0x10;
+		FAT_DirectoryEntrySetStartCluster((FAT_DirectoryEntry_TypeDef *)(SDCARD_WriteBuffer + 0), newCluster);
+		FAT_DirectoryEntrySetStartCluster((FAT_DirectoryEntry_TypeDef *)(SDCARD_WriteBuffer + 32), cluster);
+		if (SDCARD_Write(FAT_GetAddress(newCluster)) == 0)
+			return 0;
+
+		// Link the cluster
+		if (SDCARD_Read(FAT_GetAddress(FAT_DirectoryFind.Cluster) + FAT_DirectoryFind.Sector) == 0)
+			return 0;
+		FAT_DirectoryEntrySetStartCluster((FAT_DirectoryEntry_TypeDef *)(write - 32), newCluster);
+		SDCARD_CopyReadBufferToWriteBuffer();
+		if (SDCARD_Write(FAT_GetAddress(FAT_DirectoryFind.Cluster) + FAT_DirectoryFind.Sector) == 0)
+			return 0;
+
+		// Return with the FAT_DirectoryFind.Cluster pointing to the new directory
+		FAT_DirectoryFind.Cluster = newCluster;
+	}
+
+	return 1;
 }
 
 uint32_t FAT_AnalyseAndCreateSFN (char * name)
