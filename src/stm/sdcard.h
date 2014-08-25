@@ -18,6 +18,8 @@
 #define SDCARD_BLOCK_SIZE				512
 #define SDCARD_BLOCK_SIZE_LOG			9
 
+#define SDCARD_NO_BLOCK_CACHED			(-1)
+
 #define SDCARD_CRC_BYTE					0x95
 
 #define SDCARD_CARD_DETECTION_PERIOD	500
@@ -54,10 +56,11 @@
 extern void SDCARD_Init (void);
 extern uint32_t SDCARD_Command (uint32_t command, uint32_t argument);
 extern void SDCARD_Delay (uint32_t delay);
-extern void SDCARD_Read (uint32_t block);
-extern void SDCARD_Write (uint32_t block);
+extern uint32_t SDCARD_Read (uint32_t block);
+extern uint32_t SDCARD_Write (uint32_t block);
 
 // Global variables
+extern uint32_t SDCARD_CachedBlock;
 extern uint8_t SDCARD_ReadBuffer[SDCARD_BLOCK_SIZE];
 extern uint8_t SDCARD_WriteBuffer[SDCARD_BLOCK_SIZE];
 

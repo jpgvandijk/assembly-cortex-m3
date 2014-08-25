@@ -27,6 +27,7 @@
 			.global		SDCARD_Write
 
 			@ Variables
+			.global		SDCARD_CachedBlock
 			.global		SDCARD_ReadBuffer
 			.global		SDCARD_WriteBuffer
 
@@ -43,8 +44,13 @@
 			#else
 			.section	.noinit.SDCARD_Buffer
 			#endif
+			.align		2
+			.type		SDCARD_CachedBlock, "object"
 			.type		SDCARD_ReadBuffer, "object"
 			.type		SDCARD_WriteBuffer, "object"
+SDCARD_Variables:
+SDCARD_CachedBlock:
+			.space		4
 SDCARD_Buffer:
 			.space		1
 SDCARD_WriteBuffer:
@@ -70,9 +76,11 @@ SDCARD_Init:
 			push		{lr}
 
 			@ Initialize variables
-			ldr			r0, =SDCARD_Buffer
+			ldr			r0, =SDCARD_Variables
+			movs		r1, SDCARD_NO_BLOCK_CACHED
+			str			r1, [r0, (SDCARD_CachedBlock - SDCARD_Variables)]
 			movs		r1, #0xFE
-			strb		r1, [r0]
+			strb		r1, [r0, (SDCARD_Buffer - SDCARD_Variables)]
 
 			@ Initialize the SS pin as open-drain to detect a card
 			movs		r0, GPIOD
@@ -316,15 +324,30 @@ SDCARD_Read:
 			@ Argument:
 			@ r0: block number
 
+			@ Return values
+			@ r0: status (0: error)
+
 			@ Save registers
 			push		{r4, lr}
 
-			@ TODO: add exclusive access in read function
+			@ Compare with currently cached block
+			movs		r4, #1
+			ldr			r1, =SDCARD_CachedBlock
+			ldr			r2, [r1]
+			cmp			r2, r0
+			beq			_sdcard_read_finished_
+			str			r0, [r1]
+
+			@ Block must be loaded, get exclusive access
+			cpy			r4, r0
+			movs		r0, SDCARD_SPI_BAUDRATE
+			bl			SPI1_GetExclusiveAccess
 
 			@ Calculate byte address
-			lsls		r1, r0, SDCARD_BLOCK_SIZE_LOG
+			lsls		r1, r4, SDCARD_BLOCK_SIZE_LOG
 			movs		r0, SDCARD_CMD17
 			bl			SDCARD_Command
+			movs		r4, #0
 			cmp			r0, #0
 			bne			_sdcard_read_error_
 
@@ -344,6 +367,7 @@ SDCARD_Read:
 			bl			SPI1_Transfer
 			cmp			r0, #0xFF
 			beq			0b
+			movs		r4, #0
 			tst			r0, #0xE0
 			beq			_sdcard_read_late_error_
 
@@ -358,6 +382,9 @@ SDCARD_Read:
 			@ Wait for the DMA transfers to complete
 			bl			SPI1_WaitRXOnlyWithDMA
 
+			@ No error
+			movs		r4, #1
+
 _sdcard_read_late_error_:
 
 			@ Deselect the chip
@@ -370,7 +397,19 @@ _sdcard_read_late_error_:
 
 _sdcard_read_error_:
 
-			@ Restore registers and return
+			@ Clear exclusive access
+			bl			SPI1_ClearExclusiveAccess
+
+			@ Invalidate cached block in case of an error
+			cbnz		r4, _sdcard_read_finished_
+			ldr			r0, =SDCARD_CachedBlock
+			movs		r1, SDCARD_NO_BLOCK_CACHED
+			str			r1, [r0]
+
+_sdcard_read_finished_:
+
+			@ Restore registers and return status
+			cpy			r0, r4
 			pop			{r4, pc}
 
 
@@ -384,15 +423,30 @@ SDCARD_Write:
 			@ Argument:
 			@ r0: block number
 
-			@ Save registers
-			push		{lr}
+			@ Return values:
+			@ r0: status (0: error)
 
-			@ TODO: add exclusive access in write function
+			@ Save registers
+			push		{r4, lr}
+
+			@ Invalidate cached block if address matches
+			ldr			r1, =SDCARD_CachedBlock
+			movs		r3, SDCARD_NO_BLOCK_CACHED
+			ldr			r2, [r1]
+			cmp			r2, r0
+			it			eq
+			streq		r3, [r1]
+
+			@ Get exclusive access
+			cpy			r4, r0
+			movs		r0, SDCARD_SPI_BAUDRATE
+			bl			SPI1_GetExclusiveAccess
 
 			@ Calculate byte address
-			lsls		r1, r0, SDCARD_BLOCK_SIZE_LOG
+			lsls		r1, r4, SDCARD_BLOCK_SIZE_LOG
 			movs		r0, SDCARD_CMD24
 			bl			SDCARD_Command
+			movs		r4, #0
 			cmp			r0, #0
 			bne			_sdcard_write_error_
 
@@ -422,10 +476,17 @@ SDCARD_Write:
 			movs		r1, (1 << 6)
 			str			r1, [r2]
 
+			@ No error
+			movs		r4, #1
+
 _sdcard_write_error_:
 
-			@ Restore registers and return
-			pop			{pc}
+			@ Clear exclusive access
+			bl			SPI1_ClearExclusiveAccess
+
+			@ Restore registers and return status
+			cpy			r0, r4
+			pop			{r4, pc}
 
 
 
