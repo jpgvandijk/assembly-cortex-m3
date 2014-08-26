@@ -59,19 +59,22 @@ uint32_t FAT_GetAddress (uint32_t cluster);
 uint32_t FAT_GetNextCluster (uint32_t cluster);
 uint32_t FAT_Allocate (void);
 uint32_t FAT_Link (uint32_t first, uint32_t add);
-uint32_t FAT_DirectoryExtend (uint32_t cluster);
+uint32_t FAT_DirectoryExtend (uint32_t cluster, uint32_t clear);
 uint32_t FAT_DirectoryEntryGetStartCluster (FAT_DirectoryEntry_TypeDef * entry);
 void FAT_DirectoryEntrySetStartCluster (FAT_DirectoryEntry_TypeDef * entry, uint32_t cluster);
 void FAT_DirectoryEntryPrintDOSName (FAT_DirectoryEntry_TypeDef * entry);
 void FAT_DirectoryEntryGatherLFN (FAT_DirectoryEntry_TypeDef * entry);
 void FAT_DirectoryEntryScatterLFN (FAT_DirectoryEntry_TypeDef * entry, char * name);
+uint32_t FAT_AnalyseAndCreateSFN (char * name);
 void FAT_DirectoryFindSetup (uint32_t cluster);
 uint32_t FAT_DirectoryFindNext (uint32_t type);
 uint32_t FAT_DirectoryFindVolumeLabel (void);
 uint32_t FAT_DirectoryFindName (uint32_t cluster, uint32_t type, char * name);
 uint32_t FAT_DirectoryFindContiguousEntries (uint32_t cluster, uint32_t required);
 uint32_t FAT_DirectoryAddItem (uint32_t cluster, char * name, uint8_t type);
-uint32_t FAT_AnalyseAndCreateSFN (char * name);
+uint32_t FAT_DirectoryDeleteItem (void);
+uint32_t FAT_LoadFile (uint32_t offset);
+uint32_t FAT_SaveFile (uint32_t n_bytes);
 
 // Global constants/variables
 extern FAT_Partition_TypeDef FAT_Partition;
