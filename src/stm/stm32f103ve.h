@@ -227,7 +227,7 @@
 #define EXTI_PR			(STM_EXTI + 0x14)
 
 //----------------------------------------------------
-// TIM2 to TIM5
+// TIM2 to TIM7
 //----------------------------------------------------
 
 // Base address
@@ -236,6 +236,8 @@
 #define STM_TIM3 		0x40000400
 #define STM_TIM4 		0x40000800
 #define STM_TIM5 		0x40000C00
+#define STM_TIM6 		0x40001000
+#define STM_TIM7 		0x40001400
 
 // Registers
 #define TIMx_CR1 		(0x00)
