@@ -108,6 +108,15 @@
 // The lowest priority is reserved for the idle task
 #define KERNEL_TaskIdlePriority 					(CONFIG_ImplementedPriorities - 1)
 
+// Queue control structure definitions
+#define KERNEL_QueueStructureFieldLock				0
+#define KERNEL_QueueStructureFieldLockDelay			1
+#define KERNEL_QueueStructureFieldRxIndex			2
+#define KERNEL_QueueStructureFieldTxIndex			3
+#define KERNEL_QueueStructureFieldBufferSize		4
+#define KERNEL_QueueStructureFieldElementSize		5
+#define KERNEL_QueueStructureFieldBuffer			6
+
 #ifndef __ASSEMBLER__
 
 /************************************************************
@@ -235,6 +244,35 @@ extern void KERNEL_KillTask (void);
 // Global functions
 extern uint32_t KERNEL_GetExclusiveAccess (uint8_t * lock);
 extern void KERNEL_ClearExclusiveAccess (uint8_t * lock);
+
+/************************************************************
+* KERNEL_QUEUE.S											*
+************************************************************/
+
+// Structures
+typedef struct
+{
+	uint8_t Lock;
+	uint8_t LockDelay;
+	uint8_t RxIndex;
+	uint8_t TxIndex;
+	uint8_t BufferSize;
+	uint8_t ElementSize;
+	void * Buffer;
+} KERNEL_QueueStructure;
+
+// Global functions
+extern void KERNEL_QueueInit (KERNEL_QueueStructure * structure, uint8_t LockDelay, uint8_t BufferSize, uint8_t ElementSize);
+extern void KERNEL_QueueSend (KERNEL_QueueStructure * structure, uint32_t Element);
+extern uint32_t KERNEL_QueueReceive (KERNEL_QueueStructure * structure, uint32_t WaitForData);
+
+/************************************************************
+* KERNEL_DEBUG.S											*
+************************************************************/
+
+// Global functions
+extern void KERNEL_DEBUG_Init (void);
+extern void KERNEL_DEBUG_TaskSwitch (uint32_t reserved0, uint32_t reserved1, KERNEL_TaskTableEntry * task);
 
 #endif//__ASSEMBLER__
 

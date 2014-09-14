@@ -43,6 +43,8 @@
 			.global		NVIC_SetPriorityGrouping
 			.global		NVIC_SystemReset
 
+			.global		ITM_SendPort0
+
 
 
 
@@ -433,6 +435,45 @@ NVIC_ControlFunctions_END:
 
 			@ Calculate function group size
 			.set		NVIC_ControlFunctions_SIZE, NVIC_ControlFunctions_END - NVIC_ControlFunctions
+
+
+
+
+
+@-----------------------------------------------------------@
+@ ITM functions												@
+@-----------------------------------------------------------@
+
+			.section	.text.ITM_SendPort0
+			.type		ITM_SendPort0, "function"
+ITM_SendPort0:
+
+			@ Arguments:
+			@ r0: character to send
+
+			@ First check if tracing, the ITM and the port are enabled
+			ldr			r1, =DEMCR
+			ldr			r2, [r1]
+			tst			r2, #(1 << 24)
+			beq			1f
+			ldr			r1, =CM3_ITM
+			ldr			r2, [r1, (TCR - CM3_ITM)]
+			tst			r2, #(1 << 0)
+			beq			1f
+			ldr			r2, [r1, (TER - CM3_ITM)]
+			tst			r2, #(1 << 0)
+			beq			1f
+
+			@ Wait for the previous transfer to complete
+0:			ldr			r2, [r1, (PORT0 - CM3_ITM)]
+			cmp			r2, #0
+			beq			0b
+
+			@ Write the character
+			strb		r0, [r1, (PORT0 - CM3_ITM)]
+
+			@ Return
+1:			bx			lr
 
 
 

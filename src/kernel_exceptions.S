@@ -366,6 +366,13 @@ _pendsv_handler_update_task_:
 
 _kernel_restore_context_and_return_:
 
+			@ Note the task switching for debugging purposes
+			#ifdef		KERNEL_DEBUG
+			push		{r2, lr}
+			bl			KERNEL_DEBUG_TaskSwitch
+			pop			{r2, lr}
+			#endif
+
 			@ Get the PSP value for the new task
 			@ldr		r2, [r0]
 			ldr			r1, [r2, KERNEL_TaskTableEntryFieldSP]

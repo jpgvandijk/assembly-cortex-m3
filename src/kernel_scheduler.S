@@ -149,6 +149,11 @@ KERNEL_Init:
 			@ Save registers
 			push		{lr}
 
+			@ Initialize debugging if used
+			#ifdef		KERNEL_DEBUG
+			bl			KERNEL_DEBUG_Init
+			#endif
+
 			@ Init the heap
 			bl			KERNEL_InitHeap
 

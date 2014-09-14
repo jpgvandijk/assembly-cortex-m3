@@ -66,7 +66,8 @@ void TaskTouchTFT (uint32_t arg)
 	while (1)
 	{
 		// Wait for new data
-		while (!TaskTouch_Receive(&touch));
+		while (!TaskTouch_Receive(&touch))
+			KERNEL_SVCForceContextSwitchDelay(5);
 
 		// Print result
 		TFT_Color = 0xFFFF;

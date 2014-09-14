@@ -32,6 +32,7 @@ extern uint32_t NVIC_EXCSetPriority (uint32_t EXC_number, uint32_t Priority);
 extern uint32_t NVIC_EXCGetPriority (uint32_t EXC_number);
 extern void NVIC_SetPriorityGrouping (uint32_t PriorityGrouping);
 extern void NVIC_SystemReset (void);
+extern void ITM_SendPort0 (char character);
 
 #endif//__ASSEMBLER__
 
@@ -161,6 +162,105 @@ extern void NVIC_SystemReset (void);
 
 // SysTick Calibration Register
 #define SYST_CALIB 		0xE000E01C
+
+//----------------------------------------------------
+// CORE DEBUG
+//----------------------------------------------------
+
+// Core Debug Registers
+#define CM3_CoreDebug	0xE000EDF0
+
+// Debug Halting Control and Status Register
+#define DHCSR			0xE000EDF0
+
+// Debug Core Register Selector Register
+#define DCRSR			0xE000EDF4
+
+// Debug Core Register Data Register
+#define DCRDR			0xE000EDF8
+
+// Debug Exception and Monitor Control Register
+#define DEMCR			0xE000EDFC
+
+//----------------------------------------------------
+// ITM
+//----------------------------------------------------
+
+// Instrumentation Trace Macrocell Registers
+#define CM3_ITM			0xE0000000
+
+// ITM Stimulus Port Registers
+#define PORT0			0xE0000000
+#define PORT1			0xE0000004
+#define PORT2			0xE0000008
+#define PORT3			0xE000000C
+#define PORT4			0xE0000010
+#define PORT5			0xE0000014
+#define PORT6			0xE0000018
+#define PORT7			0xE000001C
+#define PORT8			0xE0000020
+#define PORT9			0xE0000024
+#define PORT10			0xE0000028
+#define PORT11			0xE000002C
+#define PORT12			0xE0000030
+#define PORT13			0xE0000034
+#define PORT14			0xE0000038
+#define PORT15			0xE000003C
+#define PORT16			0xE0000040
+#define PORT17			0xE0000044
+#define PORT18			0xE0000048
+#define PORT19			0xE000004C
+#define PORT20			0xE0000050
+#define PORT21			0xE0000054
+#define PORT22			0xE0000058
+#define PORT23			0xE000005C
+#define PORT24			0xE0000060
+#define PORT25			0xE0000064
+#define PORT26			0xE0000068
+#define PORT27			0xE000006C
+#define PORT28			0xE0000070
+#define PORT29			0xE0000074
+#define PORT30			0xE0000078
+#define PORT31			0xE000007C
+
+// ITM Trace Enable Register
+#define TER				0xE0000E00
+
+// ITM Trace Privilege Register
+#define TPR				0xE0000E40
+
+// ITM Trace Control Register
+#define TCR				0xE0000E80
+
+//----------------------------------------------------
+// DWT
+//----------------------------------------------------
+
+// Data Watchpoint and Trace Unit
+
+// Control Register
+#define DWT_CTRL		0xE0001000
+
+// Cycle Count Register
+#define DWT_CYCCNT		0xE0001004
+
+// CPI Count Register
+#define DWT_CPICNT		0xE0001008
+
+// Exception Overhead Count Register
+#define DWT_EXCCNT		0xE000100C
+
+// Sleep Count Register
+#define DWT_SLEEPCNT	0xE0001010
+
+// LSU Count Register
+#define DWT_LSUCNT		0xE0001014
+
+// Folded-instruction Count Register
+#define DWT_FOLDCNT		0xE0001018
+
+// Program Counter Sample Register
+#define DWT_PCSR		0xE000101C
 
 //----------------------------------------------------
 // EXCEPTION DEFINITIONS
