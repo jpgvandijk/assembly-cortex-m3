@@ -18,6 +18,7 @@
 @-----------------------------------------------------------@
 
 			@ Functions
+			.global		FAT_Init
 			.global		FAT_Next
 			.global		FAT16_Next
 			.global		FAT32_Next
@@ -40,6 +41,10 @@
 			.global		FAT_UnmountPartition
 			.global		FAT_FindSetup
 			.global		FAT_FindNext
+			.global		FAT_FindVolumeLabel
+			.global		FAT_FindName
+			.global		FAT_FindEmptyEntries
+			.global		FAT_AddItem
 
 			@ Variables
 			.global		FAT_Partition
@@ -58,6 +63,7 @@
 			.global		FAT_LFN_Index
 			.global		FAT_LFN_Buffer
 			.global		FAT_SFN
+			.global		FAT_SFN_Number
 			.global		FAT_SFN_Buffer
 			.global		FAT_FindCounter
 			.global		FAT_CacheFAT
@@ -135,6 +141,8 @@ FAT_LFN_Index:
 FAT_LFN_Buffer:
 			.space		260
 FAT_SFN:
+FAT_SFN_Number:
+			.space		2
 FAT_SFN_Buffer:
 			.space		11
 
@@ -244,6 +252,43 @@ FAT_CacheData_Buffer:
 @-----------------------------------------------------------@
 @ FAT Functions												@
 @-----------------------------------------------------------@
+
+			.section	.text.FAT_Init
+			.type		FAT_Init, "function"
+FAT_Init:
+			@ Initialize the caches, all data invalid since the SD-card could have been removed
+			ldr			r0, =FAT_CacheFAT
+			ldr			r1, =FAT_CacheEntries
+			ldr			r2, =FAT_CacheData
+
+			@ Set all cache locations as empty
+			movs		r3, #-1
+			str			r3, [r0, (FAT_CacheFAT_Address - FAT_CacheFAT)]
+			str			r3, [r1, (FAT_CacheEntry1_Address - FAT_CacheEntries)]
+			str			r3, [r1, (FAT_CacheEntry2_Address - FAT_CacheEntries)]
+			str			r3, [r2, (FAT_CacheData_Address - FAT_CacheData)]
+
+			@ Set the write token
+			movs		r3, SDCARD_WRITE_TOKEN
+			strb		r3, [r0, (_fat_cachefat_token_ - FAT_CacheFAT)]
+			strb		r3, [r1, (_fat_cacheentry1_token_ - FAT_CacheEntries)]
+			strb		r3, [r1, (_fat_cacheentry2_token_ - FAT_CacheEntries)]
+			strb		r3, [r2, (_fat_cachedata_token_ - FAT_CacheData)]
+
+			@ Clear the modified flags
+			movs		r3, #0
+			strb		r3, [r0, (FAT_CacheFAT_Modified - FAT_CacheFAT)]
+			strb		r3, [r1, (FAT_CacheEntry1_Modified - FAT_CacheEntries)]
+			strb		r3, [r1, (FAT_CacheEntry2_Modified - FAT_CacheEntries)]
+			strb		r3, [r2, (FAT_CacheData_Modified - FAT_CacheData)]
+
+			@ Set the default policy and return
+			strb		r3, [r1, (FAT_CacheEntries_Policy - FAT_CacheEntries)]
+			bx			lr
+
+
+
+
 
 			.section	.text.FAT_Next
 			.type		FAT_Next, "function"
@@ -645,7 +690,7 @@ FAT_Free:
 FAT_GetEntry:
 
 			@ Arguments:
-			@ none
+			@ global identification registers determine the entry
 
 			@ Return values:
 			@ r0: pointer to the entry
@@ -1317,9 +1362,31 @@ FAT_MountPartition:
 			push		{r4, r5, r6, lr}
 			ldr			r5, =FAT_Partition
 			ldr			r6, =FAT_CacheData_Buffer
+			adds		r4, r6, r0, LSL #4
+			
+			@ Initialize the caches, all data invalid since the SD-card could have been removed
+			ldr			r0, =FAT_CacheFAT
+			ldr			r1, =FAT_CacheEntries
+			ldr			r2, =FAT_CacheData
+
+			@ Set all cache locations as empty
+			movs		r3, #-1
+			str			r3, [r0, (FAT_CacheFAT_Address - FAT_CacheFAT)]
+			str			r3, [r1, (FAT_CacheEntry1_Address - FAT_CacheEntries)]
+			str			r3, [r1, (FAT_CacheEntry2_Address - FAT_CacheEntries)]
+			str			r3, [r2, (FAT_CacheData_Address - FAT_CacheData)]
+
+			@ Clear the modified flags
+			movs		r3, #0
+			strb		r3, [r0, (FAT_CacheFAT_Modified - FAT_CacheFAT)]
+			strb		r3, [r1, (FAT_CacheEntry1_Modified - FAT_CacheEntries)]
+			strb		r3, [r1, (FAT_CacheEntry2_Modified - FAT_CacheEntries)]
+			strb		r3, [r2, (FAT_CacheData_Modified - FAT_CacheData)]
+
+			@ Set the default policy
+			strb		r3, [r1, (FAT_CacheEntries_Policy - FAT_CacheEntries)]
 
 			@ Use the FAT_TypeOfPartition function to load the MBR and determine the partition type
-			adds		r4, r6, r0, LSL #4
 			bl			FAT_TypeOfPartition
 			cmp			r0, #0
 			beq			3f
@@ -1384,35 +1451,6 @@ FAT_MountPartition:
 			adds		r3, r3, r1, LSL #5
 			adds		r4, r4, r3, LSR #9
 2:			str			r4, [r5, (FAT_Partition_AddressData - FAT_Partition)]
-
-			@ Initialize the caches, all data invalid since the SD-card could have been removed
-			ldr			r0, =FAT_CacheFAT
-			ldr			r1, =FAT_CacheEntries
-			ldr			r2, =FAT_CacheData
-
-			@ Set all cache locations as empty
-			movs		r3, #-1
-			str			r3, [r0, (FAT_CacheFAT_Address - FAT_CacheFAT)]
-			str			r3, [r1, (FAT_CacheEntry1_Address - FAT_CacheEntries)]
-			str			r3, [r1, (FAT_CacheEntry2_Address - FAT_CacheEntries)]
-			str			r3, [r2, (FAT_CacheData_Address - FAT_CacheData)]
-
-			@ Set the write token
-			movs		r3, SDCARD_WRITE_TOKEN
-			strb		r3, [r0, (_fat_cachefat_token_ - FAT_CacheFAT)]
-			strb		r3, [r1, (_fat_cacheentry1_token_ - FAT_CacheEntries)]
-			strb		r3, [r1, (_fat_cacheentry2_token_ - FAT_CacheEntries)]
-			strb		r3, [r2, (_fat_cachedata_token_ - FAT_CacheData)]
-
-			@ Clear the modified flags
-			movs		r3, #0
-			strb		r3, [r0, (FAT_CacheFAT_Modified - FAT_CacheFAT)]
-			strb		r3, [r1, (FAT_CacheEntry1_Modified - FAT_CacheEntries)]
-			strb		r3, [r1, (FAT_CacheEntry2_Modified - FAT_CacheEntries)]
-			strb		r3, [r2, (FAT_CacheData_Modified - FAT_CacheData)]
-
-			@ Set the default policy
-			strb		r3, [r1, (FAT_CacheEntries_Policy - FAT_CacheEntries)]
 
 			@ Restore registers and return success
 			movs		r0, #1
@@ -1485,6 +1523,8 @@ FAT_FindSetup:
 			.section	.text.FAT_FindNext
 			.type		FAT_FindNext, "function"
 FAT_FindNext:
+
+			@ The global identification registers point to the found item
 
 			@ Arguments:
 			@ r0: type (flags determine what's passed, 0: find empty entry)
@@ -1628,3 +1668,424 @@ FAT_FindNext:
 
 
 
+
+			.section	.text.FAT_FindVolumeLabel
+			.type		FAT_FindVolumeLabel, "function"
+FAT_FindVolumeLabel:
+
+			@ Arguments:
+			@ none
+
+			@ Return values:
+			@ r0: 0 if error/no label, 1 otherwise
+
+			@ Save registers
+			push		{lr}
+
+			@ Setup a search in the root directory
+			ldr			r0, =FAT_Partition
+			ldr			r0, [r0, (FAT_Partition_RootCluster - FAT_Partition)]
+			bl			FAT_FindSetup
+
+			@ Search for the volume label, without name creation
+			movs		r0, FAT_FIND_VOLUME
+			bl			FAT_FindNext
+			cmp			r0, #1
+			itt			ne
+			movne		r0, #0
+			popne		{pc}
+
+			@ Get the directory entry and create the name
+			bl			FAT_GetEntry
+			bl			FAT_EntryPrintSFN
+
+			@ Return success
+			movs		r0, #1
+			pop			{pc}
+
+
+
+
+
+			.section	.text.FAT_FindName
+			.type		FAT_FindName, "function"
+FAT_FindName:
+
+			@ Arguments:
+			@ r0: cluster
+			@ r1: type
+			@ r2: name
+
+			@ Return values:
+			@ r0: 0 if error/not found, 1 otherwise
+			@ The global identification registers point to the entry
+
+			@ Save registers and arguments
+			push		{r4, r5, lr}
+			cpy			r4, r1
+			cpy			r5, r2
+
+			@ Setup the search
+			bl			FAT_FindSetup
+
+			@ Search for the selected type, search requires name creation
+0:			orrs		r0, r4, FAT_FIND_WITH_NAME
+			bl			FAT_FindNext
+			cmp			r0, #1
+			itt			ne
+			movne		r0, #0
+			popne		{r4, r5, pc}
+
+			@ Compare the name
+			ldr			r0, =FAT_LFN_Buffer
+			ldrh		r1, [r0, (FAT_LFN_Index - FAT_LFN_Buffer)]
+			adds		r0, r1
+			cpy			r2, r5
+1:			ldrb		r1, [r0], #1
+			ldrb		r3, [r2], #1
+			cmp			r1, r3
+			cbz			r1, 2f
+			beq			1b
+2:			bne			0b
+
+			@ Name matches!
+			movs		r0, #1
+			pop			{r4, r5, pc}
+
+
+
+
+
+			.section	.text.FAT_FindEmptyEntries
+			.type		FAT_FindEmptyEntries, "function"
+FAT_FindEmptyEntries:
+
+			@ Arguments:
+			@ r0: cluster
+			@ r1: number of required contiguous entries
+
+			@ Return values:
+			@ r0: 0 if error, 1 otherwise
+			@ The global identification registers point to the empty region
+
+			@ Save registers and arguments
+			push		{r4, r5, lr}
+			cpy			r4, r0
+			cpy			r5, r1
+
+			@ Setup a new search
+			bl			FAT_FindSetup
+
+			@ Find an empty spot, or return with an error (error or not enough space in the root directory)
+0:			movs		r0, #0
+			bl			FAT_FindNext
+			cbz			r0, 5f
+			cmp			r0, #3
+			beq			5f
+			cmp			r0, #1
+			beq			2f
+
+			@ End of last cluster reached (must extend, completely in new cluster)
+			cpy			r0, r4
+			bl			FAT_Alloc
+			cbz			r0, 5f
+			cpy			r4, r0
+			bl			FAT_ClearEntriesOfCluster
+
+			@ Set start position of contiguous block and return
+			ldr			r0, =FAT_CacheEntries
+			str			r4, [r0, (FAT_Cluster - FAT_CacheEntries)]
+			movs		r1, #0
+			strh		r1, [r0, (FAT_Sector - FAT_CacheEntries)]
+1:			movs		r0, #1
+			pop			{r4, r5, pc}
+
+			@ Certainly a single empty entry found
+2:			cmp			r5, #1
+			beq			1b
+
+			@ Check if the spot is big enough for multiple empty entries
+			push		{r6, r7, r8}
+			ldr			r0, =FAT_FindCounter
+			ldr			r6, [r0]
+			adds		r6, r5
+			ldr			r0, =FAT_CacheEntries
+			ldr			r7, [r0, (FAT_Cluster - FAT_CacheEntries)]
+			ldrh		r8, [r0, (FAT_Sector - FAT_CacheEntries)]
+
+			@ Find the next non-empty block, temporarily switch policy to keep the empty entry in cache!
+			movs		r1, #1
+			strb		r1, [r0, (FAT_CacheEntries_Policy - FAT_CacheEntries)]
+			movs		r0, FAT_FIND_ANY
+			bl			FAT_FindNext
+			ldr			r1, =FAT_CacheEntries
+			movs		r2, #0
+			strb		r2, [r1, (FAT_CacheEntries_Policy - FAT_CacheEntries)]
+			cbz			r0, 4f
+
+			@ Already enough space?
+			ldr			r2, =FAT_FindCounter
+			ldr			r2, [r2]
+			cmp			r2, r6
+			bhs			3f
+
+			@ 1: Not enough space, continue search
+			@ 2: End of last cluster reached; possible, but requires extension (part in old cluster)
+			@ 3: Max entries analysed in root, won't fit in the limited size
+			cmp			r0, #3
+			beq			4f
+			cmp			r0, #1
+			itt			eq
+			popeq		{r6, r7, r8}
+			beq			0b
+
+			@ Extend the directory
+			cpy			r0, r4
+			bl			FAT_Alloc
+			cbz			r0, 4f
+			bl			FAT_ClearEntriesOfCluster
+
+			@ Set start position of contiguous block and return
+3:			ldr			r0, =FAT_CacheEntries
+			str			r7, [r0, (FAT_Cluster - FAT_CacheEntries)]
+			strh		r8, [r0, (FAT_Sector - FAT_CacheEntries)]
+			movs		r0, #1
+			pop			{r6, r7, r8}
+			pop			{r4, r5, pc}
+
+			@ Return error
+4:			pop			{r6, r7, r8}
+5:			movs		r0, #0
+			pop			{r4, r5, pc}
+
+
+
+
+
+			.section	.text.FAT_AddItem
+			.type		FAT_AddItem, "function"
+FAT_AddItem:
+
+			@ Arguments:
+			@ r0: cluster
+			@ r1: name
+			@ r2: type (not search type!)
+
+			@ Return values:
+			@ r0: 0 if error, 1 otherwise
+			@ The global identification registers point to the regular entry, or the newly created directory
+
+			@ Save registers and arguments
+			push		{r4, r5, r6, r7, r8, lr}
+			cpy			r4, r0
+			cpy			r5, r1
+			cpy			r6, r2
+
+			@ Check if a file with the same name already exists
+			movs		r1, FAT_FIND_ANY
+			cpy			r2, r5
+			bl			FAT_FindName
+			cmp			r0, #0
+			bne			_fat_additem_error_
+
+			@ Determine whether a LFN is required and prepare a short name
+			cpy			r0, r5
+			bl			FAT_CreateSFN
+			cpy			r8, r0
+			movs		r7, #1
+			tst			r0, #0x0100
+			beq			1f
+
+			@ Determine number of required entries for the LFN
+			@ r7 = 2 + strlen(r5) / 13
+			movs		r7, #0
+0:			ldrb		r0, [r5, r7]
+			adds		r7, #1
+			cmp			r0, #0
+			bne			0b
+			adds		r7, #25
+			movs		r0, #13
+			udiv		r7, r0
+
+			@ Find a contiguous empty region that's big enough
+1:			cpy			r0, r4
+			cpy			r1, r7
+			bl			FAT_FindEmptyEntries
+			cmp			r0, #0
+			beq			10f
+
+			@ Get the entry
+2:			bl			FAT_GetEntry
+
+			@ Regular entry or LFN entry?
+			cmp			r7, #1
+			beq			5f
+			subs		r7, #1
+
+			@ Set the sequence number
+			strb		r7, [r0, #0]
+
+			@ First of the LFN entries?
+			tst			r8, #0x0100
+			beq			5f
+
+			@ Update the SFN and calculate the checksum
+			@ New name is not checked to be unique, but probably is if the other files are also created in the same power cycle
+			@ Also files are not lost (when viewed using these functions or even in windows explorer) when not unique, but cannot be differentiated in a search
+			ldr			r1, =FAT_SFN
+			ldrh		r2, [r1, (FAT_SFN_Number - FAT_SFN)]
+			adds		r2, #1
+			movw		r3, #4095
+			ands		r2, r3
+			strh		r2, [r1, (FAT_SFN_Number - FAT_SFN)]
+			movs		r3, '~'
+			strb		r3, [r1, (FAT_SFN_Buffer + 5 - FAT_SFN)]
+			movs		r3, #128
+			adds		r3, r3, r2, LSR #6
+			strb		r3, [r1, (FAT_SFN_Buffer + 6 - FAT_SFN)]
+			ands		r3, r2, #63
+			adds		r3, #128
+			strb		r3, [r1, (FAT_SFN_Buffer + 7 - FAT_SFN)]
+
+			@ Calculate the checksum
+			movs		r8, #0
+			adds		r1, (FAT_SFN_Buffer - FAT_SFN)
+			adds		r2, r1, #11
+3:			lsrs		r8, #1
+			it			cs
+			addcs		r8, #(1 << 7)
+			ldrb		r3, [r1], #1
+			adds		r8, r3
+			cmp			r1, r2
+			bne			3b
+
+			@ Note end in the sequence number
+			orrs		r1, r7, (1 << 6)
+			strb		r1, [r0, #0]
+
+			@ Set the other fields of interest in the LFN entry
+4:			movs		r1, #0x0F
+			strb		r1, [r0, #11]
+			movs		r1, #0
+			strb		r1, [r0, #12]
+			strh		r1, [r0, #26]
+			strb		r8, [r0, #13]
+
+			@ Fill in the characters
+			subs		r1, r7, #1
+			movs		r2, #13
+			muls		r1, r2
+			adds		r1, r5
+			bl			FAT_EntryScatterLFN
+
+			@ Advance to the next entry
+			ldr			r2, =FAT_CacheEntries
+			ldrb		r0, [r2, (FAT_Entry - FAT_CacheEntries)]
+			adds		r0, #1
+			ands		r0, #15
+			strb		r0, [r2, (FAT_Entry - FAT_CacheEntries)]
+			bne			2b
+
+			@ Advance to the next sector
+			ldr			r3, =FAT_Partition
+			ldr			r3, [r3, (FAT_Partition_SectorsPerCluster - FAT_Partition)]
+			subs		r3, #1
+			ldrb		r0, [r2, (FAT_Sector - FAT_CacheEntries)]
+			adds		r0, #1
+			ands		r0, r3
+			strb		r0, [r2, (FAT_Sector - FAT_CacheEntries)]
+			bne			2b
+
+			@ Advance to the next cluster
+			ldr			r0, [r2, (FAT_Cluster - FAT_CacheEntries)]
+			bl			FAT_Next
+			ldr			r2, =FAT_CacheEntries
+			str			r0, [r2, (FAT_Cluster - FAT_CacheEntries)]
+			cbz			r0, _fat_additem_error_
+			cmp			r0, #-1
+			bne			2b
+
+			@ Return error
+_fat_additem_error_:
+			movs		r0, #0
+			pop			{r4, r5, r6, r7, r8, pc}
+
+			@ Add regular entry, copy the short name (and case), type, cluster 0, size 0 etc.
+5:			adds		r1, r0, #11
+			ldr			r2, =FAT_SFN_Buffer
+6:			ldrb		r3, [r2], #1
+			strb		r3, [r0], #1
+			cmp			r0, r1
+			bne			6b
+			strb		r6, [r0], #1
+			ands		r8, #0x18
+			strb		r8, [r0], #1
+			adds		r1, #(32-11)
+			movs		r3, #0
+7:			strb		r3, [r0], #1
+			cmp			r0, r1
+			bne			7b
+
+			@ In case a directory was added, add a file with the "." and ".." entries
+			ands		r6, #0x58
+			cmp			r6, #0x10
+			bne			9f
+
+			@ Allocate and clear a cluster, no linking
+			movs		r0, #0
+			bl			FAT_Alloc
+			cbz			r0, 10f
+			cpy			r8, r0
+			bl			FAT_ClearEntriesOfCluster
+
+			@ Set the cluster as starting cluster
+			bl			FAT_GetEntry
+			cpy			r1, r8
+			bl			FAT_EntrySetStartCluster
+
+			@ Update the global identification registers
+			ldr			r0, =FAT_CacheEntries
+			str			r8, [r0, (FAT_Cluster - FAT_CacheEntries)]
+			movs		r1, #0
+			strh		r1, [r0, (FAT_Sector - FAT_CacheEntries)]
+			bl			FAT_GetEntry
+
+			@ Add the "." and ".." entries (both entries are available in the buffer)
+			movs		r1, '.'
+			strb		r1, [r0, #32]
+			strb		r1, [r0], #1
+			adds		r2, r0, #10
+			movs		r1, ' '
+8:			strb		r1, [r0, #32]
+			strb		r1, [r0], #1
+			cmp			r0, r2
+			bne			8b
+			movs		r1, '.'
+			strb		r1, [r0, #22]
+			movs		r1, 0x10
+			strb		r1, [r0, #32]
+			strb		r1, [r0]
+			subs		r0, #11
+			cpy			r7, r0
+			cpy			r1, r8
+			bl			FAT_EntrySetStartCluster
+			adds		r0, r7, #32
+			cpy			r1, r4
+			bl			FAT_EntrySetStartCluster
+
+			@ Return success
+9:			movs		r0, #1
+10:			pop			{r4, r5, r6, r7, r8, pc}
+
+
+
+
+
+
+
+
+@ TODO: Load/Save/Delete Functions: load/save update policy automatically!
+@ 1) delete: simple LRU will work
+@ 2) search during edit: don't update LRU at all? opened file remains MRU
+@ 2) finding non-empty after empty in finding contiguous: don't update the LRU at all? empty entry remains MRU
+@ 3) clearing a cluster for entries: start from last without updating the MRU, not even required on last?

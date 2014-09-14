@@ -49,6 +49,7 @@ typedef struct __attribute__((packed))
 {
 	uint16_t LFN_Index;
 	uint8_t LFN_Buffer[260];
+	uint16_t SFN_Number;
 	uint8_t SFN_Buffer[11];
 } FAT_NameBuffers_TypeDef;
 
@@ -94,6 +95,7 @@ extern FAT_CacheEntries_TypeDef FAT_CacheEntries;
 extern FAT_CacheData_TypeDef FAT_CacheData;
 
 // Global functions
+extern void FAT_Init (void);
 extern uint32_t FAT_Next (uint32_t cluster);
 extern uint32_t FAT16_Next (uint32_t cluster);
 extern uint32_t FAT32_Next (uint32_t cluster);
@@ -113,6 +115,10 @@ extern uint32_t FAT_MountPartition (uint32_t n);
 extern void FAT_UnmountPartition (void);
 extern void FAT_FindSetup (uint32_t cluster);
 extern uint32_t FAT_FindNext (uint32_t type);
+extern uint32_t FAT_FindVolumeLabel (void);
+extern uint32_t FAT_FindName (uint32_t cluster, uint32_t type, char * name);
+extern uint32_t FAT_FindEmptyEntries (uint32_t cluster, uint32_t entries);
+extern uint32_t FAT_AddItem (uint32_t cluster, char * name, uint32_t type);
 
 #endif//__ASSEMBLER__
 

@@ -22,6 +22,7 @@
 
 #define SDCARD_CRC_BYTE					0x95
 
+//#define SDCARD_AUTODETECT
 #define SDCARD_CARD_DETECTION_PERIOD	500
 #define SDCARD_CARD_DETECTION_DELAY		1000
 #define SDCARD_INIT_DELAY_MS			2
@@ -29,6 +30,7 @@
 #define SDCARD_INIT_IDLE_DELAY_MS		10
 
 #define SDCARD_READ_TOKEN_TIMEOUT		100000
+#define SDCARD_WRITE_TOKEN				0xFE
 
 #define SDCARD_COMMAND_TIMEOUT			10
 #define SDCARD_COMMAND_TIMEOUT_RESPONSE	(-1)
@@ -56,13 +58,9 @@
 extern void SDCARD_Init (void);
 extern uint32_t SDCARD_Command (uint32_t command, uint32_t argument);
 extern void SDCARD_Delay (uint32_t delay);
-extern uint32_t SDCARD_Read (uint32_t block);
-extern uint32_t SDCARD_Write (uint32_t block);
-
-// Global variables
-extern uint32_t SDCARD_CachedBlock;
-extern uint8_t SDCARD_ReadBuffer[SDCARD_BLOCK_SIZE];
-extern uint8_t SDCARD_WriteBuffer[SDCARD_BLOCK_SIZE];
+extern void SDCARD_Read (uint32_t block, uint8_t * buffer);
+extern void SDCARD_Write (uint32_t block, uint8_t * buffer_with_token);
+extern void SDCARD_Error (void);
 
 #endif//__ASSEMBLER__
 
