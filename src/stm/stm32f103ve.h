@@ -258,6 +258,26 @@
 #define TIMx_CCR4 		(0x40)
 
 //----------------------------------------------------
+// USART1 to USART5
+//----------------------------------------------------
+
+// Base address
+#define STM_USART1				0x40013800
+#define STM_USART2				0x40004400
+#define STM_USART3				0x40004800
+#define STM_USART4				0x40004C00
+#define STM_USART5				0x40005000
+
+// Registers
+#define USARTx_SR				(0x00)
+#define USARTx_DR				(0x04)
+#define USARTx_BRR				(0x08)
+#define USARTx_CR1				(0x0C)
+#define USARTx_CR2				(0x10)
+#define USARTx_CR3				(0x14)
+#define USARTx_GTPR				(0x18)
+
+//----------------------------------------------------
 // INTERRUPT DEFINITIONS
 //----------------------------------------------------
 
