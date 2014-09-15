@@ -53,6 +53,7 @@ main:
 			@bl			tft_test
 			@bl			touch_test
 			@bl			sdcard_test
+			@bl			buzzer_test
 
 			@ Enter an infinite loop in case the test application returns
 			b			.
