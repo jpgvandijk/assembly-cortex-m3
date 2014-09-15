@@ -14,6 +14,7 @@
 #include "spi1.h"
 #include "flash.h"
 #include "tft.h"
+#include "print.h"
 
 // Includes (data)
 #include "data/SystemFont.h"
@@ -24,6 +25,8 @@
 
 // Function prototypes
 void TaskTFT (uint32_t arg);
+void TFT_Print (void);
+void TFT_Log (char character);
 void TaskTFTPerformance (uint32_t arg);
 
 // Global variables
@@ -108,6 +111,13 @@ void TaskTFT (uint32_t arg)
 	
 	TFT_Color = 0xFFFF;
 	TFT_SetArea(0, 319, 0, 239);
+	TFT_Color = 0x0000;
+	TFT_SelectFont(Consolas10);
+	TFT_Print();
+	KERNEL_SVCForceContextSwitchDelay(2000);
+
+	TFT_Color = 0xFFFF;
+	TFT_SetArea(0, 319, 0, 239);
 	TFT_Color = (0x1F << 11);
 	TFT_SelectFont(Calibri80);
 	TFT_PrintString(20, 20, "1.783");
@@ -131,6 +141,53 @@ void TaskTFT (uint32_t arg)
 		for (i = 0; i < 320; i++)
 			for (j = 0; j < 240; j++)
 				TFT_SetPixel(i, j);
+	}
+}
+
+void TFT_Print (void)
+{
+	Printer printer = TFT_Log;
+	Print(Print(printer, PRINT_TEXT, (PrintArgument) "\nCharacters: "), PRINT_CHARACTERS(4), (PrintArgument) "Nested!");
+	Print(printer, PRINT_TEXT, (PrintArgument) "\nSigned 32: ");
+	Print(printer, PRINT_SIGNED_32, (PrintArgument) -2143658709L);
+	Print(printer, PRINT_TEXT, (PrintArgument) "\nSigned 16: ");
+	Print(printer, PRINT_SIGNED_16, (PrintArgument) 0L);
+	Print(printer, PRINT_TEXT, (PrintArgument) "\nSigned 8: ");
+	Print(printer, PRINT_SIGNED_8, (PrintArgument) 45L);
+	Print(printer, PRINT_TEXT, (PrintArgument) "\nUnsigned 32: ");
+	Print(printer, PRINT_UNSIGNED_32, (PrintArgument) 3142658709UL);
+	Print(printer, PRINT_TEXT, (PrintArgument) "\nUnsigned 16: ");
+	Print(printer, PRINT_UNSIGNED_16, (PrintArgument) 0UL);
+	Print(printer, PRINT_TEXT, (PrintArgument) "\nUnsigned 8: ");
+	Print(printer, PRINT_UNSIGNED_8, (PrintArgument) 254UL);
+	Print(printer, PRINT_TEXT, (PrintArgument) "\nHexadecimal 32: 0x");
+	Print(printer, PRINT_HEX_32, (PrintArgument) 0xFE9810BAUL);
+	Print(printer, PRINT_TEXT, (PrintArgument) "\nHexadecimal 16: 0x");
+	Print(printer, PRINT_HEX_16, (PrintArgument) 0x1234UL);
+	Print(printer, PRINT_TEXT, (PrintArgument) "\nHexadecimal 8: 0x");
+	Print(printer, PRINT_HEX_8, (PrintArgument) 0xF0UL);
+	Print(printer, PRINT_TEXT, (PrintArgument) "\nBinary 32: 0b");
+	Print(printer, PRINT_BINARY_32, (PrintArgument) 0xFE9810BAUL);
+	Print(printer, PRINT_TEXT, (PrintArgument) "\nBinary 16: 0b");
+	Print(printer, PRINT_BINARY_16, (PrintArgument) 0x1234UL);
+	Print(printer, PRINT_TEXT, (PrintArgument) "\nBinary 8: 0b");
+	Print(printer, PRINT_BINARY_8, (PrintArgument) 0xF0UL);
+}
+
+// TFT Logging
+uint16_t TFT_LogX = 0;
+uint16_t TFT_LogY = 0;
+void TFT_Log (char character)
+{
+	if (character == '\n') {
+		TFT_LogY++;
+		TFT_LogX = 0;
+	} else if (character == '\t') {
+		TFT_LogX = (TFT_LogX + 4) & ~0x03;
+	} else {
+		char array[2] = {character, '\0'};
+		TFT_PrintString(6*TFT_LogX+10, 10*TFT_LogY, array);
+		TFT_LogX++;
 	}
 }
 
