@@ -898,7 +898,7 @@ OW_CheckCRC8:
 			movs		r2, #0
 0:			ldrb		r3, [r0], #1
 			movs		r4, #8
-1:			eor			r5, r3, r2
+1:			eors		r5, r3, r2
 			lsrs		r2, #1
 			tst			r5, #1
 			it			ne

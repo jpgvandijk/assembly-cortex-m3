@@ -998,7 +998,7 @@ FAT_EntryScatterLFN:
 
 
 
-			.section	.text.FAT_EntryLFN
+			.section	.rodata.FAT_EntryLFN
 			.type		FAT_EntryLFN_Indices, "object"
 FAT_EntryLFN_Indices:
 			.byte		0x01
@@ -1021,7 +1021,7 @@ FAT_EntryLFN_Indices:
 
 
 			.section	.text.FAT_EntryPrintSFN
-			.type		FAT_EntryPrintSFN, "object"
+			.type		FAT_EntryPrintSFN, "function"
 FAT_EntryPrintSFN:
 
 			@ Arguments:
@@ -1109,7 +1109,7 @@ FAT_EntryPrintSFN:
 
 
 			.section	.text.FAT_CreateSFN
-			.type		FAT_CreateSFN, "object"
+			.type		FAT_CreateSFN, "function"
 FAT_CreateSFN:
 
 			@ Arguments:
@@ -1362,7 +1362,7 @@ FAT_MountPartition:
 			push		{r4, r5, r6, lr}
 			ldr			r5, =FAT_Partition
 			ldr			r6, =FAT_CacheData_Buffer
-			adds		r4, r6, r0, LSL #4
+			cpy			r4, r0
 			
 			@ Initialize the caches, all data invalid since the SD-card could have been removed
 			ldr			r0, =FAT_CacheFAT
@@ -1387,6 +1387,7 @@ FAT_MountPartition:
 			strb		r3, [r1, (FAT_CacheEntries_Policy - FAT_CacheEntries)]
 
 			@ Use the FAT_TypeOfPartition function to load the MBR and determine the partition type
+			cpy			r0, r4
 			bl			FAT_TypeOfPartition
 			cmp			r0, #0
 			beq			3f

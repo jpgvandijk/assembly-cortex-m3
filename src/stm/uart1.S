@@ -68,7 +68,7 @@ UART1_Init:
 			str			r2, [r0, USARTx_CR1]
 
 			@ Return
-			bx			lr
+			pop			{pc}
 
 
 
