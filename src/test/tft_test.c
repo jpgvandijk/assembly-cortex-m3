@@ -62,7 +62,10 @@ void TaskTFT (uint32_t arg)
 	TFT_Init();
 	TFT_Color = 0xFFFF;
 	TFT_SetArea(0, 319, 0, 239);
-	
+	#ifdef STM_BOARD_CUSTOM
+		TFT_BacklightOn();
+	#endif
+
 	TFT_Color = 0x0000;
 	TFT_SetLine(102, 100, 197, 100);
 	KERNEL_SVCForceContextSwitchDelay(250);

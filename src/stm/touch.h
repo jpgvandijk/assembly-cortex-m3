@@ -9,12 +9,11 @@
 
 // Includes
 #include "stm32f103ve.h"
+#include "board.h"
 
 // Definitions
-#define TOUCH_SPI_BAUDRATE				5	// TODO: check maximum baudrate!
+#define TOUCH_SPI_BAUDRATE				4	// TODO: check maximum baudrate!
 #define TOUCH_IRQ_PRIORITY				8	// FIXME: STM different interrupts than LPC!
-#define TOUCH_IRQ_NUMBER				EXTI9_5_IRQn
-#define TOUCH_IRQ_HANDLER				EXTI9_5_IRQHandler
 
 #ifndef __ASSEMBLER__
 

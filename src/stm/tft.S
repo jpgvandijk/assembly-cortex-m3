@@ -19,6 +19,10 @@
 
 			@ Functions
 			.global		TFT_Init
+			#ifdef STM_BOARD_CUSTOM
+			.global		TFT_BacklightOn
+			.global		TFT_BacklightOff
+			#endif
 			.global		TFT_WriteMultipleRegisters
 			.global		TFT_SetPixel
 			.global		TFT_PrepareWindow
@@ -129,10 +133,21 @@ TFT_Init:
 			push		{r4, lr}
 
 			@ Configure the reset pin
-			movs		r0, GPIOE
-			movs		r1, 1
+			movs		r0, TFT_RESET_GPIO
+			movs		r1, TFT_RESET_PIN
 			movs		r2, PIN_OUTPUT_NORMAL_50MHz
 			bl			PIN_Configure
+
+			#ifdef STM_BOARD_CUSTOM
+
+			@ Configure the backlight pin, and turn off
+			movs		r0, TFT_LIGHT_GPIO
+			movs		r1, TFT_LIGHT_PIN
+			movs		r2, PIN_OUTPUT_NORMAL_50MHz
+			bl			PIN_Configure
+			bl			TFT_BacklightOff
+
+			#endif
 
 			@ Configure FSMC pins and make them high
 			ldr			r2, =_tft_init_data_pins_
@@ -183,8 +198,8 @@ TFT_Init:
 			str			r1, [r0, (FSMC_Bank1_BTCR0 - STM_FSMC_Bank1)]
 
 			@ Reset TFT
-			ldr			r4, =STM_GPIOE
-			movs		r2, #(1 << 1)
+			ldr			r4, =TFT_RESET_GPIO_REGS
+			movs		r2, #(1 << TFT_RESET_PIN)
 			movs		r0, SVC_ForceContextSwitchDelay
 			str			r2, [r4, GPIOx_BRR]
 			movs		r1, #5
@@ -337,6 +352,42 @@ _tft_init_data_pins_:
 			.word		0xB0000000
 			.word		0xFFFFFFFF
 			.word		0xBBBBBBBB
+
+
+
+
+
+@-----------------------------------------------------------@
+@ TFT BACKLIGHT FUNCTIONS									@
+@-----------------------------------------------------------@
+
+#ifdef STM_BOARD_CUSTOM
+
+			.section	.text.TFT_Backlight
+			.type		TFT_BacklightOn, "function"
+TFT_BacklightOn:
+
+			@ Set the pin
+			ldr			r0, =TFT_LIGHT_GPIO_REGS
+			movs		r1, #(1 << TFT_LIGHT_PIN)
+			str			r1, [r0, GPIOx_BSRR]
+			bx			lr
+
+
+
+
+
+			.section	.text.TFT_Backlight
+			.type		TFT_BacklightOff, "function"
+TFT_BacklightOff:
+
+			@ Clear the pin
+			ldr			r0, =TFT_LIGHT_GPIO_REGS
+			movs		r1, #(1 << TFT_LIGHT_PIN)
+			str			r1, [r0, GPIOx_BRR]
+			bx			lr
+
+#endif
 
 
 

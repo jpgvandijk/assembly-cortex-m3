@@ -119,7 +119,7 @@ void TaskTouch (uint32_t arg)
 	while (1)
 	{
 		// Check if screen is no longer touched
-		if (*((volatile uint32_t *) GPIOB_IDR) & (1 << 6))
+		if (*((volatile uint32_t *) TOUCH_IRQ_IDR) & (1 << TOUCH_IRQ_PIN))
 		{
 			// Send movement analysis result
 			switch (touch.type)
@@ -136,7 +136,7 @@ void TaskTouch (uint32_t arg)
 					do {
 						KERNEL_SVCForceContextSwitchPeriodic(TASK_TOUCH_PERIOD);
 						time++;
-						if (!(*((volatile uint32_t *) GPIOB_IDR) & (1 << 6)))
+						if (!(*((volatile uint32_t *) TOUCH_IRQ_IDR) & (1 << TOUCH_IRQ_PIN)))
 						{
 							// Early touch
 							// FIXME: goto is terrible
@@ -390,7 +390,7 @@ void TOUCH_IRQ_HANDLER (void)
 		KERNEL_AddTaskToReadyList(task);
 
 	// Clear flag
-	*((volatile uint32_t *) EXTI_PR) = (1 << 6);
+	*((volatile uint32_t *) EXTI_PR) = (1 << TOUCH_IRQ_PIN);
 }
 
 #endif//STM

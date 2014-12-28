@@ -2,9 +2,6 @@
 *
 * Author: J.P.G. van Dijk
 *
-* N.B.: The touch controller (XPT2046) has the SS pin connected to pin B7, and
-* the IRQ pin to pin B6.
-*
 ************************************************************************************/
 
 			.thumb
@@ -40,32 +37,32 @@ TOUCH_Init:
 			push		{lr}
 
 			@ Initialize the SS pin
-			movs		r0, GPIOB
-			movs		r1, 7
+			movs		r0, TOUCH_SS_GPIO
+			movs		r1, TOUCH_SS_PIN
 			movs		r2, PIN_OUTPUT_NORMAL_50MHz
 			bl			PIN_Configure
 
 			@ Deselect the chip
-			ldr			r0, =GPIOB_BSRR
-			movs		r1, (1 << 7)
+			ldr			r0, =TOUCH_SS_BSRR
+			movs		r1, (1 << TOUCH_SS_PIN)
 			str			r1, [r0]
 
 			@ Initialize the IRQ pin
-			movs		r0, GPIOB
-			movs		r1, 6
+			movs		r0, TOUCH_IRQ_GPIO
+			movs		r1, TOUCH_IRQ_PIN
 			movs		r2, PIN_INPUT_FLOATING
 			bl			PIN_Configure
 
-			@ Select port PB6 for IRQ external interrupt
-			ldr			r0, =AFIO_EXTICR2
-			movs		r2, GPIOB
+			@ Select port for IRQ external interrupt
+			ldr			r0, =TOUCH_IRQ_EXTICR
+			movs		r2, TOUCH_IRQ_GPIO
 			ldr			r1, [r0]
-			bfi			r1, r2, #8, #4
+			bfi			r1, r2, #TOUCH_IRQ_EXTICR_LSB, #4
 			str			r1, [r0]
 
-			@ EXTI Line 6 interrupt on falling edge
+			@ EXTI Line interrupt on falling edge
 			ldr			r0, =STM_EXTI
-			movs		r2, #(1 << 6)
+			movs		r2, #(1 << TOUCH_IRQ_PIN)
 			ldr			r1, [r0, (EXTI_IMR - STM_EXTI)]
 			orrs		r1, r2
 			str			r1, [r0, (EXTI_IMR - STM_EXTI)]
@@ -79,8 +76,8 @@ TOUCH_Init:
 			orrs		r1, r2
 			str			r1, [r0, (EXTI_FTSR - STM_EXTI)]
 
-			@ Set EXTI5...9 priority, interrupt not yet enabled
-			movs		r0, EXTI9_5_IRQn
+			@ Set EXTI priority, interrupt not yet enabled
+			movs		r0, TOUCH_IRQ_NUMBER
 			movs		r1, TOUCH_IRQ_PRIORITY
 			bl			NVIC_IRQSetPriority
 
@@ -106,14 +103,14 @@ TOUCH_Read:
 
 			@ Get exclusive access to the SPI module
 			movs		r0, #TOUCH_SPI_BAUDRATE
-			bl			SPI1_GetExclusiveAccess
+			bl			TOUCH_SPI_GET_EXCLUSIVE_ACCESS
 
 			@ Enable the SPI
-			bl			SPI1_EnableDefault
+			bl			TOUCH_SPI_ENABLE_DEFAULT
 
 			@ Select the chip
-			ldr			r0, =GPIOB_BRR
-			movs		r1, (1 << 7)
+			ldr			r0, =TOUCH_SS_BRR
+			movs		r1, (1 << TOUCH_SS_PIN)
 			str			r1, [r0]
 			
 			@ Transfer:
@@ -130,31 +127,31 @@ TOUCH_Read:
 			ldr			r5, =_touch_read_data_
 			add			r7, r4, r7, LSL #1
 			ldrb		r0, [r5], #1
-			bl			SPI1_Transfer
+			bl			TOUCH_SPI_TRANSFER
 0:			movs		r0, #0
-			bl			SPI1_Transfer
+			bl			TOUCH_SPI_TRANSFER
 			and			r6, r0, #0x7F
 			lsls		r6, #5
 			ldrb		r0, [r5], #1
-			bl			SPI1_Transfer
+			bl			TOUCH_SPI_TRANSFER
 			and			r0, #0x1F
 			orrs		r6, r0
 			strh		r6, [r4], #2
 			cmp			r4, r7
 			blo			0b
 			movs		r0, #0
-			bl			SPI1_Transfer
+			bl			TOUCH_SPI_TRANSFER
 
 			@ Deselect the chip
-			ldr			r0, =GPIOB_BSRR
-			movs		r1, (1 << 7)
+			ldr			r0, =TOUCH_SS_BSRR
+			movs		r1, (1 << TOUCH_SS_PIN)
 			str			r1, [r0]
 			
 			@ Disable the SPI and return to normal mode
-			bl			SPI1_DisableDefault
+			bl			TOUCH_SPI_DISABLE_DEFAULT
 
 			@ Release exclusive access to the SPI module
-			bl			SPI1_ClearExclusiveAccess
+			bl			TOUCH_SPI_CLEAR_EXCLUSIVE_ACCESS
 
 			@ Restore registers and return
 			pop			{r4, r5, r6, r7, pc}

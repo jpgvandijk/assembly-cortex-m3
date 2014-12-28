@@ -10,6 +10,7 @@
 // Includes
 #include "stm32f103ve.h"
 #include "kernel.h"
+#include "board.h"
 
 // Definitions
 #define SDCARD_SPI_BAUDRATE_INIT		7
@@ -22,7 +23,7 @@
 
 #define SDCARD_CRC_BYTE					0x95
 
-//#define SDCARD_AUTODETECT
+#define SDCARD_AUTODETECT
 #define SDCARD_CARD_DETECTION_PERIOD	500
 #define SDCARD_CARD_DETECTION_DELAY		1000
 #define SDCARD_INIT_DELAY_MS			2

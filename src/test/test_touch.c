@@ -13,6 +13,7 @@
 #include "kernel.h"
 #include "system.h"
 #include "spi1.h"
+#include "spi3.h"
 #include "flash.h"
 #include "tft.h"
 #include "task_touch.h"
@@ -35,6 +36,7 @@ void touch_test (void)
 	// Init the FLASH chip and SPI module
 	FLASH_Init();
 	SPI1_Init();
+	SPI3_Init();
 
 	// Init the TOUCH chip and queue to communicate touch messages
 	TaskTouch_Init();
@@ -61,6 +63,11 @@ void TaskTouchTFT (uint32_t arg)
 	TFT_Color = 0xFFFF;
 	TFT_SetArea(0, 319, 0, 239);
 	TFT_SelectFont(SystemFont);
+
+	// Turn on the backlight
+	#ifdef STM_BOARD_CUSTOM
+		TFT_BacklightOn();
+	#endif
 
 	// Show touch results
 	while (1)

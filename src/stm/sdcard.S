@@ -2,8 +2,6 @@
 *
 * Author: J.P.G. van Dijk
 *
-* N.B.: The SD-card has the SS pin connected to pin D6
-*
 ************************************************************************************/
 
 			.thumb
@@ -47,8 +45,8 @@ SDCARD_Init:
 #ifdef SDCARD_AUTODETECT
 
 			@ Initialize the SS pin as open-drain to detect a card
-			movs		r0, GPIOD
-			movs		r1, 6
+			movs		r0, SDCARD_GPIO
+			movs		r1, SDCARD_PIN
 			movs		r2, PIN_OUTPUT_OPENDRAIN_50MHz
 			bl			PIN_Configure
 			b			0f
@@ -57,13 +55,13 @@ SDCARD_Init:
 #endif
 
 			@ Clear exclusive access from previous error
-4:			bl			SPI1_ClearExclusiveAccess
+4:			bl			SDCARD_SPI_CLEAR_EXCLUSIVE_ACCESS
 
 #ifdef SDCARD_AUTODETECT
 
 			@ Initialize the SS pin as open-drain to detect a card
-			movs		r0, GPIOD
-			movs		r1, 6
+			movs		r0, SDCARD_GPIO
+			movs		r1, SDCARD_PIN
 			movs		r2, PIN_OUTPUT_OPENDRAIN_50MHz
 			bl			PIN_Configure
 
@@ -73,8 +71,8 @@ SDCARD_Init:
 			svc			SVC_ForceContextSwitch
 
 			@ Pull the SS pin low for a short time
-0:			ldr			r0, =STM_GPIOD
-			movs		r1, (1 << 6)
+0:			ldr			r0, =SDCARD_GPIO_REGS
+			movs		r1, (1 << SDCARD_PIN)
 			str			r1, [r0, GPIOx_BRR]
 			str			r1, [r0, GPIOx_BSRR]
 
@@ -91,14 +89,14 @@ SDCARD_Init:
 #endif
 
 			@ Configure SS pin properly
-3:			movs		r0, GPIOD
-			movs		r1, 6
+3:			movs		r0, SDCARD_GPIO
+			movs		r1, SDCARD_PIN
 			movs		r2, PIN_OUTPUT_NORMAL_50MHz
 			bl			PIN_Configure
 
 			@ Deselect the chip
-			ldr			r0, =STM_GPIOD
-			movs		r1, (1 << 6)
+			ldr			r0, =SDCARD_GPIO_REGS
+			movs		r1, (1 << SDCARD_PIN)
 			str			r1, [r0, GPIOx_BSRR]
 
 			@ Wait minimum time before starting initialization
@@ -108,7 +106,7 @@ SDCARD_Init:
 
 			@ Get exclusive access with low clock frequency
 			movs		r0, SDCARD_SPI_BAUDRATE_INIT
-			bl			SPI1_GetExclusiveAccess
+			bl			SDCARD_SPI_GET_EXCLUSIVE_ACCESS
 
 			@ Wait minimum time before starting initialization
 			movs		r0, SDCARD_INIT_DELAY_CYCLES
@@ -122,12 +120,12 @@ SDCARD_Init:
 			bne			4b
 
 			@ Wait while IDLE (can take a long time)
-5:			bl			SPI1_ClearExclusiveAccess
+5:			bl			SDCARD_SPI_CLEAR_EXCLUSIVE_ACCESS
 			movs		r0, SVC_ForceContextSwitchDelay
 			movs		r1, SDCARD_INIT_IDLE_DELAY_MS
 			svc			SVC_ForceContextSwitch
 			movs		r0, SDCARD_SPI_BAUDRATE_INIT
-			bl			SPI1_GetExclusiveAccess
+			bl			SDCARD_SPI_GET_EXCLUSIVE_ACCESS
 
 			@ Read state
 			movs		r0, SDCARD_CMD55
@@ -156,7 +154,7 @@ SDCARD_Init:
 			bne			4b
 
 			@ Initialization succeeded!
-			bl			SPI1_ClearExclusiveAccess
+			bl			SDCARD_SPI_CLEAR_EXCLUSIVE_ACCESS
 
 			@ Restore registers and return
 			pop			{pc}
@@ -182,34 +180,34 @@ SDCARD_Command:
 			cpy			r5, r1
 
 			@ Enable the SPI
-			bl			SPI1_EnableDefault
+			bl			SDCARD_SPI_ENABLE_DEFAULT
 
 			@ Select the chip
-			ldr			r0, =GPIOD_BRR
-			movs		r1, (1 << 6)
+			ldr			r0, =SDCARD_BRR
+			movs		r1, (1 << SDCARD_PIN)
 			str			r1, [r0]
 
 			@ Wait until the card is not busy + resynchronize
 0:			movs		r0, #0xFF
-			bl			SPI1_Transfer
+			bl			SDCARD_SPI_TRANSFER
 			cmp			r0, #0xFF
 			bne			0b
 
 			@ Write command
 			ands		r0, r4, #0xFF
-			bl			SPI1_Transfer
+			bl			SDCARD_SPI_TRANSFER
 
 			@ Write argument (4 bytes)
 			movs		r6, #24
 1:			lsrs		r0, r5, r6
-			bl			SPI1_Transfer
+			bl			SDCARD_SPI_TRANSFER
 			cbz			r6, 2f
 			subs		r6, #8
 			b			1b
 
 			@ Write fixed CRC
 2:			movs		r0, SDCARD_CRC_BYTE
-			bl			SPI1_Transfer
+			bl			SDCARD_SPI_TRANSFER
 
 			@ Wait for response
 			movs		r5, SDCARD_COMMAND_TIMEOUT_RESPONSE
@@ -217,7 +215,7 @@ SDCARD_Command:
 3:			subs		r6, #1
 			beq			5f
 			movs		r0, #0xFF
-			bl			SPI1_Transfer
+			bl			SDCARD_SPI_TRANSFER
 			tst			r0, #0x80
 			bne			3b
 
@@ -226,19 +224,19 @@ SDCARD_Command:
 			lsrs		r4, #8
 			beq			5f
 4:			movs		r0, #0xFF
-			bl			SPI1_Transfer
+			bl			SDCARD_SPI_TRANSFER
 			lsls		r5, #8
 			orrs		r5, r0
 			subs		r4, #1
 			bne			4b
 
 			@ Deselect the chip
-5:			ldr			r2, =GPIOD_BSRR
-			movs		r1, (1 << 6)
+5:			ldr			r2, =SDCARD_BSRR
+			movs		r1, (1 << SDCARD_PIN)
 			str			r1, [r2]
 
 			@ Disable the SPI and return to normal mode
-			bl			SPI1_DisableDefault
+			bl			SDCARD_SPI_DISABLE_DEFAULT
 			
 			@ Restore registers and return with response or error code
 			cpy			r0, r5
@@ -260,26 +258,26 @@ SDCARD_Delay:
 			cpy			r4, r0
 
 			@ Enable the SPI
-			bl			SPI1_EnableDefault
+			bl			SDCARD_SPI_ENABLE_DEFAULT
 
 			@ Select the chip
-			ldr			r0, =GPIOD_BRR
-			movs		r1, (1 << 6)
+			ldr			r0, =SDCARD_BRR
+			movs		r1, (1 << SDCARD_PIN)
 			str			r1, [r0]
 
 			@ Delay
 0:			movs		r0, #0xFF
-			bl			SPI1_Transfer
+			bl			SDCARD_SPI_TRANSFER
 			subs		r4, #1
 			bne			0b
 
 			@ Deselect the chip
-			ldr			r2, =GPIOD_BSRR
-			movs		r1, (1 << 6)
+			ldr			r2, =SDCARD_BSRR
+			movs		r1, (1 << SDCARD_PIN)
 			str			r1, [r2]
 
 			@ Disable the SPI and return to normal mode
-			bl			SPI1_DisableDefault
+			bl			SDCARD_SPI_DISABLE_DEFAULT
 
 			@ Restore registers and return
 			pop			{r4, pc}
@@ -303,7 +301,7 @@ SDCARD_Read:
 
 			@ Block must be loaded, get exclusive access
 			movs		r0, SDCARD_SPI_BAUDRATE
-			bl			SPI1_GetExclusiveAccess
+			bl			SDCARD_SPI_GET_EXCLUSIVE_ACCESS
 
 			@ Calculate byte address
 			lsls		r1, r4, SDCARD_BLOCK_SIZE_LOG
@@ -314,11 +312,11 @@ SDCARD_Read:
 			bne			_sdcard_read_error_
 
 			@ Enable the SPI
-			bl			SPI1_EnableDefault
+			bl			SDCARD_SPI_ENABLE_DEFAULT
 
 			@ Select the chip to continue the transfer
-			ldr			r0, =GPIOD_BRR
-			movs		r1, (1 << 6)
+			ldr			r0, =SDCARD_BRR
+			movs		r1, (1 << SDCARD_PIN)
 			str			r1, [r0]
 
 			@ Wait for the token
@@ -326,7 +324,7 @@ SDCARD_Read:
 0:			subs		r4, #1
 			beq			_sdcard_read_late_error_
 			movs		r0, #0xFF
-			bl			SPI1_Transfer
+			bl			SDCARD_SPI_TRANSFER
 			cmp			r0, #0xFF
 			beq			0b
 			movs		r4, #0
@@ -334,15 +332,15 @@ SDCARD_Read:
 			beq			_sdcard_read_late_error_
 
 			@ Disable the SPI to setup the DMA
-			bl			SPI1_DisableDefault
+			bl			SDCARD_SPI_DISABLE_DEFAULT
 
 			@ Setup the DMA
 			cpy			r0, r5
 			movs		r1, SDCARD_BLOCK_SIZE
-			bl			SPI1_EnableRXOnlyWithDMA
+			bl			SDCARD_SPI_ENABLE_RX_ONLY_DMA
 
 			@ Wait for the DMA transfers to complete
-			bl			SPI1_WaitRXOnlyWithDMA
+			bl			SDCARD_SPI_WAIT_RX_ONLY_DMA
 
 			@ No error
 			movs		r4, #1
@@ -350,17 +348,17 @@ SDCARD_Read:
 _sdcard_read_late_error_:
 
 			@ Deselect the chip
-			ldr			r2, =GPIOD_BSRR
-			movs		r1, (1 << 6)
+			ldr			r2, =SDCARD_BSRR
+			movs		r1, (1 << SDCARD_PIN)
 			str			r1, [r2]
 
 			@ Disable the SPI and return to normal mode
-			bl			SPI1_DisableRXOnlyWithDMA
+			bl			SDCARD_SPI_DISABLE_RX_ONLY_DMA
 
 _sdcard_read_error_:
 
 			@ Clear exclusive access
-			bl			SPI1_ClearExclusiveAccess
+			bl			SDCARD_SPI_CLEAR_EXCLUSIVE_ACCESS
 
 			@ Check if an error has occured
 			cmp			r4, #0
@@ -391,7 +389,7 @@ SDCARD_Write:
 
 			@ Get exclusive access
 			movs		r0, SDCARD_SPI_BAUDRATE
-			bl			SPI1_GetExclusiveAccess
+			bl			SDCARD_SPI_GET_EXCLUSIVE_ACCESS
 
 			@ Calculate byte address
 			lsls		r1, r4, SDCARD_BLOCK_SIZE_LOG
@@ -406,25 +404,25 @@ SDCARD_Write:
 			bl			SDCARD_Delay
 
 			@ Select the chip to continue the transfer
-			ldr			r0, =GPIOD_BRR
-			movs		r1, (1 << 6)
+			ldr			r0, =SDCARD_BRR
+			movs		r1, (1 << SDCARD_PIN)
 			str			r1, [r0]
 
 			@ Enable the SPI with DMA
 			@ Send token 0xFE + 512 bytes + 2 bytes CRC
 			cpy			r0, r5
 			movw		r1, (SDCARD_BLOCK_SIZE + 3)
-			bl			SPI1_EnableTXOnlyWithDMA
+			bl			SDCARD_SPI_ENABLE_TX_ONLY_DMA
 
 			@ Wait for the DMA transfers to complete
-			bl			SPI1_WaitTXOnlyWithDMA
+			bl			SDCARD_SPI_WAIT_TX_ONLY_DMA
 
 			@ Disable the SPI and return to normal mode
-			bl			SPI1_DisableTXOnlyWithDMA
+			bl			SDCARD_SPI_DISABLE_TX_ONLY_DMA
 
 			@ Deselect the chip
-			ldr			r2, =GPIOD_BSRR
-			movs		r1, (1 << 6)
+			ldr			r2, =SDCARD_BSRR
+			movs		r1, (1 << SDCARD_PIN)
 			str			r1, [r2]
 
 			@ No error
@@ -433,7 +431,7 @@ SDCARD_Write:
 _sdcard_write_error_:
 
 			@ Clear exclusive access
-			bl			SPI1_ClearExclusiveAccess
+			bl			SDCARD_SPI_CLEAR_EXCLUSIVE_ACCESS
 
 			@ Check if an error has occured
 			cmp			r4, #0

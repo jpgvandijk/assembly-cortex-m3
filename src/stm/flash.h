@@ -9,6 +9,7 @@
 
 // Includes
 #include "stm32f103ve.h"
+#include "board.h"
 
 // Definitions
 #define FLASH_SPI_BAUDRATE				0

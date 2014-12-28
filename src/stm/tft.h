@@ -11,6 +11,7 @@
 #include "stm32f103ve.h"
 #include "kernel.h"
 #include "flash.h"
+#include "board.h"
 
 // Configuration and definitions
 #define TFT_CACHE_WIDTH_SIZE					96
@@ -44,6 +45,10 @@ extern uint8_t TFT_CacheChar[];
 
 // Global functions
 extern void TFT_Init (void);
+#ifdef STM_BOARD_CUSTOM
+extern void TFT_BacklightOn (void);
+extern void TFT_BacklightOff (void);
+#endif
 extern void * TFT_WriteMultipleRegisters (void * list, uint32_t count);
 extern void TFT_SetPixel (uint16_t x, uint16_t y);
 extern void TFT_PrepareWindow (uint16_t xmin, uint16_t xmax, uint16_t ymin, uint16_t ymax);
