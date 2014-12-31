@@ -43,6 +43,58 @@
 	#define SDCARD_SPI_DISABLE_TX_ONLY_DMA		SPI1_DisableTXOnlyWithDMA
 	#define SDCARD_SPI_TRANSFER					SPI1_Transfer
 
+	// The ENC28J60 ethernet controller
+	#define ENC_SS_PIN							12
+	#define ENC_SS_GPIO							GPIOB
+	#define ENC_SS_BRR							GPIOB_BRR
+	#define ENC_SS_BSRR							GPIOB_BSRR
+	#define ENC_RST_PIN							10
+	#define ENC_RST_GPIO						GPIOB
+	#define ENC_RST_BSRR						GPIOB_BSRR
+	#define ENC_IRQ_PIN							11
+	#define ENC_IRQ_GPIO						GPIOB
+	#define ENC_IRQ_EXTICR						AFIO_EXTICR3
+	#define ENC_IRQ_EXTICR_LSB					12
+	#define ENC_IRQ_NUMBER						EXTI15_10_IRQn
+	#define ENC_IRQ_HANDLER						EXTI15_10_IRQHandler
+	#define ENC_SPI_GET_EXCLUSIVE_ACCESS		SPI2_GetExclusiveAccess
+	#define ENC_SPI_CLEAR_EXCLUSIVE_ACCESS		SPI2_ClearExclusiveAccess
+	#define ENC_SPI_ENABLE_DEFAULT				SPI2_EnableDefault
+	#define ENC_SPI_DISABLE_DEFAULT				SPI2_DisableDefault
+	#define ENC_SPI_ENABLE_RX_ONLY_DMA			SPI2_EnableRXOnlyWithDMA
+	#define ENC_SPI_WAIT_RX_ONLY_DMA			SPI2_WaitRXOnlyWithDMA
+	#define ENC_SPI_DISABLE_RX_ONLY_DMA			SPI2_DisableRXOnlyWithDMA
+	#define ENC_SPI_ENABLE_TX_ONLY_DMA			SPI2_EnableTXOnlyWithDMA
+	#define ENC_SPI_WAIT_TX_ONLY_DMA			SPI2_WaitTXOnlyWithDMA
+	#define ENC_SPI_DISABLE_TX_ONLY_DMA			SPI2_DisableTXOnlyWithDMA
+	#define ENC_SPI_TRANSFER					SPI2_Transfer
+
+	#define ENC_MAC0							0x54
+	#define ENC_MAC1							0x55
+	#define ENC_MAC2							0x58
+	#define ENC_MAC3							0x10
+	#define ENC_MAC4							0x00
+	#define ENC_MAC5							0x24
+
+	#define ENC_IP0								192
+	#define ENC_IP1								168
+	#define ENC_IP2								2
+	#define ENC_IP3								125
+
+	#define SERVER_IP0							192
+	#define SERVER_IP1							168
+	#define SERVER_IP2							2
+	#define SERVER_IP3							126
+
+	#define ENC_DEVICE_CLIENT_PORT				85
+	#define ENC_DEVICE_SERVER_PORT				80
+
+	#define ETH_BUFFER_SIZE						0x0600
+
+	#define ETH_SUPPORT_ICMP
+	//#define ETH_SUPPORT_TCP_CLIENT
+	//#define ETH_SUPPORT_TCP_SERVER
+
 	// The XPT2046 touch controller
 	#define TOUCH_SS_PIN						15
 	#define TOUCH_SS_GPIO						GPIOA

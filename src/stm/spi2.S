@@ -2,12 +2,12 @@
 *
 * Author: J.P.G. van Dijk
 *
-* N.B.: If channel 2/3 is also used for other applications exclusive access must be
+* N.B.: If channel 4/5 is also used for other applications exclusive access must be
 * granted. Also DMA1 must be enabled in advance:
 * - movs	r0, PERIPHERAL_DMA1
 * - bl		SystemEnablePeripheral
 *
-* SPI1 usage: always return to the following configuration:
+* SPI2 usage: always return to the following configuration:
 * - CR1 = MSTR/SSI/SSM set, SPI module disabled
 * - CR2 = 0
 * - And slave deselected!
@@ -17,7 +17,7 @@
 			.thumb
 			.syntax		unified
 
-			#include	"spi1.h"
+			#include	"spi2.h"
 
 
 
@@ -28,43 +28,43 @@
 @-----------------------------------------------------------@
 
 			@ Variables
-			.global		SPI1_Data
-			.global		SPI1_ExclusiveAccess
-			.global		SPI1_ExclusiveAccessSPI
-			.global		SPI1_ExclusiveAccessDMA
+			.global		SPI2_Data
+			.global		SPI2_ExclusiveAccess
+			.global		SPI2_ExclusiveAccessSPI
+			.global		SPI2_ExclusiveAccessDMA
 
 			@ Functions
-			.global		SPI1_GetExclusiveAccess
-			.global		SPI1_ClearExclusiveAccess
-			.global		SPI1_Init
-			.global		SPI1_Transfer
-			.global		SPI1_EnableDefault
-			.global		SPI1_DisableDefault
-			.global		SPI1_EnableRXOnlyWithDMA
-			.global		SPI1_WaitRXOnlyWithDMA
-			.global		SPI1_DisableRXOnlyWithDMA
-			.global		SPI1_EnableTXOnlyWithDMA
-			.global		SPI1_WaitTXOnlyWithDMA
-			.global		SPI1_DisableTXOnlyWithDMA
+			.global		SPI2_GetExclusiveAccess
+			.global		SPI2_ClearExclusiveAccess
+			.global		SPI2_Init
+			.global		SPI2_Transfer
+			.global		SPI2_EnableDefault
+			.global		SPI2_DisableDefault
+			.global		SPI2_EnableRXOnlyWithDMA
+			.global		SPI2_WaitRXOnlyWithDMA
+			.global		SPI2_DisableRXOnlyWithDMA
+			.global		SPI2_EnableTXOnlyWithDMA
+			.global		SPI2_WaitTXOnlyWithDMA
+			.global		SPI2_DisableTXOnlyWithDMA
 
 
 
 
 
 @-----------------------------------------------------------@
-@ SPI1 Data													@
+@ SPI2 Data													@
 @-----------------------------------------------------------@
 
-			.section	.bss.SPI1_Data
+			.section	.bss.SPI2_Data
 			.align		2
-SPI1_Data:
+SPI2_Data:
 
-			@ uint8_t SPI1_ExclusiveAccess[2]
-			.type		SPI1_ExclusiveAccess, "object"
-SPI1_ExclusiveAccess:
-SPI1_ExclusiveAccessSPI:
+			@ uint8_t SPI2_ExclusiveAccess[2]
+			.type		SPI2_ExclusiveAccess, "object"
+SPI2_ExclusiveAccess:
+SPI2_ExclusiveAccessSPI:
 			.space		1
-SPI1_ExclusiveAccessDMA:
+SPI2_ExclusiveAccessDMA:
 			.space		1
 
 
@@ -72,12 +72,12 @@ SPI1_ExclusiveAccessDMA:
 
 
 @-----------------------------------------------------------@
-@ SPI1 Functions											@
+@ SPI2 Functions											@
 @-----------------------------------------------------------@
 
-			.section	.text.SPI1_GetExclusiveAccess
-			.type		SPI1_GetExclusiveAccess, "function"
-SPI1_GetExclusiveAccess:
+			.section	.text.SPI2_GetExclusiveAccess
+			.type		SPI2_GetExclusiveAccess, "function"
+SPI2_GetExclusiveAccess:
 
 			@ Arguments:
 			@ r0: SPI clock prescaler
@@ -87,17 +87,17 @@ SPI1_GetExclusiveAccess:
 			cpy			r4, r0
 
 			@ Try to get exclusive access to the SPI
-2:			ldr			r0, =SPI1_ExclusiveAccessSPI
+2:			ldr			r0, =SPI2_ExclusiveAccessSPI
 			bl			KERNEL_GetExclusiveAccess
 			cbnz		r0, 0f
 
 			@ Try to get exclusive access to the DMA
-			ldr			r0, =SPI1_ExclusiveAccessDMA
+			ldr			r0, =SPI2_ExclusiveAccessDMA
 			bl			KERNEL_GetExclusiveAccess
 			cbnz		r0, 1f
 
 			@ Change the baudrate and return succes
-			ldr			r0, =STM_SPI1
+			ldr			r0, =STM_SPI2
 			ldr			r1, [r0, SPIx_CR1]
 			bfi			r1, r4, #3, #3
 			str			r1, [r0, SPIx_CR1]
@@ -105,12 +105,12 @@ SPI1_GetExclusiveAccess:
 			pop			{r4, pc}
 
 1:			@ Access to the DMA was not granted, release access to the SPI
-			ldr			r0, =SPI1_ExclusiveAccessSPI
+			ldr			r0, =SPI2_ExclusiveAccessSPI
 			bl			KERNEL_ClearExclusiveAccess
 
 0:			@ Access not granted to the SPI, try again after some time
 			movs		r0, SVC_ForceContextSwitchDelay
-			movs		r1, SPI1_EXCLUSIVE_ACCESS_DELAY
+			movs		r1, SPI2_EXCLUSIVE_ACCESS_DELAY
 			svc			SVC_ForceContextSwitch
 			b			2b
 
@@ -118,17 +118,17 @@ SPI1_GetExclusiveAccess:
 
 
 
-			.section	.text.SPI1_ClearExclusiveAccess
-			.type		SPI1_ClearExclusiveAccess, "function"
-SPI1_ClearExclusiveAccess:
+			.section	.text.SPI2_ClearExclusiveAccess
+			.type		SPI2_ClearExclusiveAccess, "function"
+SPI2_ClearExclusiveAccess:
 
 			@ Save registers
 			push		{lr}
 
 			@ Release access to the SPI and DMA
-			ldr			r0, =SPI1_ExclusiveAccessSPI
+			ldr			r0, =SPI2_ExclusiveAccessSPI
 			bl			KERNEL_ClearExclusiveAccess
-			ldr			r0, =SPI1_ExclusiveAccessDMA
+			ldr			r0, =SPI2_ExclusiveAccessDMA
 			bl			KERNEL_ClearExclusiveAccess
 
 			@ Restore registers and return
@@ -138,33 +138,33 @@ SPI1_ClearExclusiveAccess:
 
 
 
-			.section	.text.SPI1_Init
-			.type		SPI1_Init, "function"
-SPI1_Init:
+			.section	.text.SPI2_Init
+			.type		SPI2_Init, "function"
+SPI2_Init:
 
 			@ Save registers
 			push		{lr}
 
 			@ Enable the SPI peripheral
-			movs		r0, PERIPHERAL_SPI1
+			movs		r0, PERIPHERAL_SPI2
 			bl			SystemEnablePeripheral
 
 			@ Configure the SPI pins
-			movs		r0, GPIOA
-			movs		r1, 5
+			movs		r0, GPIOB
+			movs		r1, 13
 			movs		r2, PIN_AF_OUTPUT_NORMAL_50MHz
 			bl			PIN_Configure
-			movs		r0, GPIOA
-			movs		r1, 6
+			movs		r0, GPIOB
+			movs		r1, 14
 			movs		r2, PIN_AF_OUTPUT_NORMAL_50MHz
 			bl			PIN_Configure
-			movs		r0, GPIOA
-			movs		r1, 7
+			movs		r0, GPIOB
+			movs		r1, 15
 			movs		r2, PIN_AF_OUTPUT_NORMAL_50MHz
 			bl			PIN_Configure
 
 			@ Configure the SPI module, but not enabled yet
-			ldr			r0, =STM_SPI1
+			ldr			r0, =STM_SPI2
 			movs		r1, #0x030C
 			str			r1, [r0, SPIx_CR1]
 			ldr			r1, [r0, SPIx_I2SCFGR]
@@ -180,9 +180,9 @@ SPI1_Init:
 
 
 
-			.section	.text.SPI1_Transfer
-			.type		SPI1_Transfer, "function"
-SPI1_Transfer:
+			.section	.text.SPI2_Transfer
+			.type		SPI2_Transfer, "function"
+SPI2_Transfer:
 
 			@ Arguments:
 			@ r0: write data
@@ -191,7 +191,7 @@ SPI1_Transfer:
 			@ r0: data read
 			
 			@ Load SPI base address
-			ldr			r1, =STM_SPI1
+			ldr			r1, =STM_SPI2
 			
 			@ Wait until we can transmit
 0:			ldr			r2, [r1, SPIx_SR]
@@ -214,12 +214,12 @@ SPI1_Transfer:
 
 
 
-			.section	.text.SPI1_EnableDefault
-			.type		SPI1_EnableDefault, "function"
-SPI1_EnableDefault:
+			.section	.text.SPI2_EnableDefault
+			.type		SPI2_EnableDefault, "function"
+SPI2_EnableDefault:
 
 			@ Enable the SPI in default mode
-			ldr			r0, =STM_SPI1
+			ldr			r0, =STM_SPI2
 			ldr			r1, [r0, SPIx_CR1]
 			orrs		r1, 0x0040
 			str			r1, [r0, SPIx_CR1]
@@ -231,12 +231,12 @@ SPI1_EnableDefault:
 
 
 
-			.section	.text.SPI1_DisableDefault
-			.type		SPI1_DisableDefault, "function"
-SPI1_DisableDefault:
+			.section	.text.SPI2_DisableDefault
+			.type		SPI2_DisableDefault, "function"
+SPI2_DisableDefault:
 
 			@ Disable the SPI from default mode and return to normal mode
-			ldr			r0, =STM_SPI1
+			ldr			r0, =STM_SPI2
 0:			ldr			r1, [r0, SPIx_SR]
 			tst			r1, #(1 << 7)
 			bne			0b
@@ -253,9 +253,9 @@ SPI1_DisableDefault:
 
 
 
-			.section	.text.SPI1_EnableRXOnlyWithDMA
-			.type		SPI1_EnableRXOnlyWithDMA, "function"
-SPI1_EnableRXOnlyWithDMA:
+			.section	.text.SPI2_EnableRXOnlyWithDMA
+			.type		SPI2_EnableRXOnlyWithDMA, "function"
+SPI2_EnableRXOnlyWithDMA:
 
 			@ Arguments:
 			@ r0: destination address
@@ -263,18 +263,18 @@ SPI1_EnableRXOnlyWithDMA:
 
 			@ Setup the DMA
 			ldr			r2, =STM_DMA1
-			ldr			r3, =(STM_SPI1 + SPIx_DR)
-			str			r3, [r2, DMAx_CPAR2]
-			str			r0, [r2, DMAx_CMAR2]
-			str			r1, [r2, DMAx_CNDTR2]
+			ldr			r3, =(STM_SPI2 + SPIx_DR)
+			str			r3, [r2, DMAx_CPAR4]
+			str			r0, [r2, DMAx_CMAR4]
+			str			r1, [r2, DMAx_CNDTR4]
 			movs		r0, #0x2080
-			str			r0, [r2, DMAx_CCR2]
+			str			r0, [r2, DMAx_CCR4]
 
 			@ Clear the flags and enable the DMA channel, high priority
-			movs		r1, #0x10
+			movs		r1, #0x1000
 			str			r1, [r2, DMAx_IFCR]
 			orrs		r0, #0x0001
-			str			r0, [r2, DMAx_CCR2]
+			str			r0, [r2, DMAx_CCR4]
 
 			@ Enable the SPI in RX only mode with DMA on the RX channel
 			subs		r3, SPIx_DR
@@ -293,14 +293,14 @@ SPI1_EnableRXOnlyWithDMA:
 
 
 
-			.section	.text.SPI1_WaitRXOnlyWithDMA
-			.type		SPI1_WaitRXOnlyWithDMA, "function"
-SPI1_WaitRXOnlyWithDMA:
+			.section	.text.SPI2_WaitRXOnlyWithDMA
+			.type		SPI2_WaitRXOnlyWithDMA, "function"
+SPI2_WaitRXOnlyWithDMA:
 
 			@ Wait for the DMA transfers to complete
 			ldr			r1, =STM_DMA1
 0:			ldr			r0, [r1, DMAx_ISR]
-			tst			r0, #(1 << 5)
+			tst			r0, #(1 << 13)
 			beq			0b
 
 			@ Return
@@ -310,17 +310,17 @@ SPI1_WaitRXOnlyWithDMA:
 
 
 
-			.section	.text.SPI1_DisableRXOnlyWithDMA
-			.type		SPI1_DisableRXOnlyWithDMA, "function"
-SPI1_DisableRXOnlyWithDMA:
+			.section	.text.SPI2_DisableRXOnlyWithDMA
+			.type		SPI2_DisableRXOnlyWithDMA, "function"
+SPI2_DisableRXOnlyWithDMA:
 
 			@ Disable the DMA
 			ldr			r1, =STM_DMA1
 			movs		r0, #0
-			str			r0, [r1, DMAx_CCR2]
+			str			r0, [r1, DMAx_CCR4]
 
 			@ Disable the SPI and return to normal mode
-			ldr			r1, =STM_SPI1
+			ldr			r1, =STM_SPI2
 			ldr			r0, [r1, SPIx_CR1]
 			bics		r0, (0x0040 | (1 << 10))
 			str			r0, [r1, SPIx_CR1]
@@ -336,9 +336,9 @@ SPI1_DisableRXOnlyWithDMA:
 
 
 
-			.section	.text.SPI1_EnableTXOnlyWithDMA
-			.type		SPI1_EnableTXOnlyWithDMA, "function"
-SPI1_EnableTXOnlyWithDMA:
+			.section	.text.SPI2_EnableTXOnlyWithDMA
+			.type		SPI2_EnableTXOnlyWithDMA, "function"
+SPI2_EnableTXOnlyWithDMA:
 
 			@ Arguments:
 			@ r0: source address
@@ -346,12 +346,12 @@ SPI1_EnableTXOnlyWithDMA:
 
 			@ Setup the DMA
 			ldr			r2, =STM_DMA1
-			ldr			r3, =(STM_SPI1 + SPIx_DR)
-			str			r3, [r2, DMAx_CPAR3]
-			str			r0, [r2, DMAx_CMAR3]
-			str			r1, [r2, DMAx_CNDTR3]
+			ldr			r3, =(STM_SPI2 + SPIx_DR)
+			str			r3, [r2, DMAx_CPAR5]
+			str			r0, [r2, DMAx_CMAR5]
+			str			r1, [r2, DMAx_CNDTR5]
 			movw		r0, #0x2090
-			str			r0, [r2, DMAx_CCR3]
+			str			r0, [r2, DMAx_CCR5]
 
 			@ Enable the SPI with DMA on the TX channel
 			subs		r3, SPIx_DR
@@ -362,10 +362,10 @@ SPI1_EnableTXOnlyWithDMA:
 			str			r1, [r3, SPIx_CR1]
 
 			@ Clear the flags and enable the DMA channel, high priority
-			movs		r1, #0x100
+			movs		r1, #0x10000
 			str			r1, [r2, DMAx_IFCR]
 			orrs		r0, #0x0001
-			str			r0, [r2, DMAx_CCR3]
+			str			r0, [r2, DMAx_CCR5]
 
 			@ Return
 			bx			lr
@@ -374,14 +374,14 @@ SPI1_EnableTXOnlyWithDMA:
 
 
 
-			.section	.text.SPI1_WaitTXOnlyWithDMA
-			.type		SPI1_WaitTXOnlyWithDMA, "function"
-SPI1_WaitTXOnlyWithDMA:
+			.section	.text.SPI2_WaitTXOnlyWithDMA
+			.type		SPI2_WaitTXOnlyWithDMA, "function"
+SPI2_WaitTXOnlyWithDMA:
 
 			@ Wait for the DMA transfers to complete
 			ldr			r1, =STM_DMA1
 0:			ldr			r0, [r1, DMAx_ISR]
-			tst			r0, #(1 << 9)
+			tst			r0, #(1 << 17)
 			beq			0b
 
 			@ Return
@@ -391,17 +391,17 @@ SPI1_WaitTXOnlyWithDMA:
 
 
 
-			.section	.text.SPI1_DisableTXOnlyWithDMA
-			.type		SPI1_DisableTXOnlyWithDMA, "function"
-SPI1_DisableTXOnlyWithDMA:
+			.section	.text.SPI2_DisableTXOnlyWithDMA
+			.type		SPI2_DisableTXOnlyWithDMA, "function"
+SPI2_DisableTXOnlyWithDMA:
 
 			@ Disable the DMA
 			ldr			r1, =STM_DMA1
 			movs		r0, #0
-			str			r0, [r1, DMAx_CCR3]
+			str			r0, [r1, DMAx_CCR5]
 
 			@ Disable the SPI and return to normal mode
-			ldr			r0, =STM_SPI1
+			ldr			r0, =STM_SPI2
 0:			ldr			r1, [r0, SPIx_SR]
 			tst			r1, #(1 << 7)
 			bne			0b

@@ -12,7 +12,7 @@
 #include "kernel.h"
 
 // Configuration
-#define SPI1_EXCLUSIVE_ACCESS_DELAY 			0
+#define SPI1_EXCLUSIVE_ACCESS_DELAY 			1
 
 #ifndef __ASSEMBLER__
 
