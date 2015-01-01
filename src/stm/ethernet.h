@@ -26,6 +26,7 @@
 // Global constants
 extern const uint8_t ENC_DEVICE_MAC[6];
 extern const uint8_t ENC_DEVICE_IP[4];
+extern const uint8_t ENC_SERVER_MAC[6];
 extern const uint8_t ENC_SERVER_IP[4];
 
 // Global variables
@@ -36,9 +37,13 @@ extern uint16_t ETH_Size;
 extern uint32_t ETH_AnalyzePacket (void);
 extern void ETH_PrepareEthernetHeader (void);
 extern void ETH_PrepareIPHeader (uint32_t length);
+extern void ETH_PrepareTCPHeader (uint32_t acks, uint32_t flags);
 extern uint32_t ETH_CalculateChecksum (uint8_t * buffer, uint32_t length, uint32_t type);
 extern void ETH_SendARPReply (void);
 extern void ETH_SendICMPReply (void);
+extern void ETH_SendTCP (uint32_t acks, uint32_t flags);
+extern void ETH_SendTCPData (uint32_t payloadlength, uint32_t last);
+extern void ETH_SendTCPSYN (uint8_t * server_MAC, uint8_t * server_IP, uint16_t server_port);
 
 #endif//__ASSEMBLER__
 
@@ -84,8 +89,8 @@ extern void ETH_SendICMPReply (void);
 #define ETH_TCP_SRC_PORT				34
 #define ETH_TCP_DST_PORT				36
 #define ETH_TCP_SEQ						38
-#define ETH_TCP_SEQACK					42
-#define ETH_TCP_HEADER_LEN				46
+#define ETH_TCP_ACK						42
+#define ETH_TCP_HLEN					46
 #define ETH_TCP_FLAGS					47
 #define ETH_TCP_FLAGS_FIN				0x01
 #define ETH_TCP_FLAGS_SYN				0x02

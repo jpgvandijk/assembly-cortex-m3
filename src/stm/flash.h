@@ -13,8 +13,12 @@
 
 // Definitions
 #define FLASH_SPI_BAUDRATE				0
+#define FLASH_BASE_ADDRESS				__ext_StartAddress
 
 #ifndef __ASSEMBLER__
+
+// Global variables
+extern uint32_t __ext_StartAddress;
 
 // Global functions
 extern void FLASH_Init (void);

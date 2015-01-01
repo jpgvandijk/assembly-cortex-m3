@@ -81,19 +81,28 @@
 	#define ENC_IP2								2
 	#define ENC_IP3								125
 
+	#define ENC_DEVICE_CLIENT_PORT_LE			(85 << 8)
+	#define ENC_DEVICE_SERVER_PORT_LE			(80 << 8)
+
+	#define SERVER_MAC0							0xD8
+	#define SERVER_MAC1							0x50
+	#define SERVER_MAC2							0xE6
+	#define SERVER_MAC3							0x0A
+	#define SERVER_MAC4							0x98
+	#define SERVER_MAC5							0x27
+
 	#define SERVER_IP0							192
 	#define SERVER_IP1							168
 	#define SERVER_IP2							2
 	#define SERVER_IP3							126
 
-	#define ENC_DEVICE_CLIENT_PORT				85
-	#define ENC_DEVICE_SERVER_PORT				80
+	#define SERVER_PORT_LE						0x401F
 
 	#define ETH_BUFFER_SIZE						0x0600
 
 	#define ETH_SUPPORT_ICMP
-	//#define ETH_SUPPORT_TCP_CLIENT
-	//#define ETH_SUPPORT_TCP_SERVER
+	#define ETH_SUPPORT_TCP_CLIENT
+	#define ETH_SUPPORT_TCP_SERVER
 
 	// The XPT2046 touch controller
 	#define TOUCH_SS_PIN						15
