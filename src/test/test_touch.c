@@ -4,8 +4,6 @@
 *
 ************************************************************************************/
 
-#ifdef STM
-
 // Includes
 #include <stdint.h>
 #include "cortex_m3.h"
@@ -19,7 +17,7 @@
 #include "task_touch.h"
 
 // Includes (data)
-#include "data/SystemFont.h"
+#include "../tft_test/data/SystemFont.h"
 
 // Function prototypes
 void TaskTouchTFT (uint32_t arg);
@@ -28,9 +26,18 @@ void TaskTouchTFT (uint32_t arg);
 const KERNEL_TaskDescriptor TaskDescriptor_TaskTouchTFT = {TaskTouchTFT, 0, (KERNEL_MinimumTaskStackSpace + 96), 1, "TFT"};
 
 // Main
-void touch_test (void)
+void main (void)
 {
-	// Enable the DMA1
+	// Init the system clock
+	SystemInitClock();
+	
+	// Enable the peripherals
+	SystemEnablePeripheral(PERIPHERAL_AFIO);
+	SystemEnablePeripheral(PERIPHERAL_IOPA);
+	SystemEnablePeripheral(PERIPHERAL_IOPB);
+	SystemEnablePeripheral(PERIPHERAL_IOPC);
+	SystemEnablePeripheral(PERIPHERAL_IOPD);
+	SystemEnablePeripheral(PERIPHERAL_IOPE);
 	SystemEnablePeripheral(PERIPHERAL_DMA1);
 
 	// Init the FLASH chip and SPI module
@@ -73,8 +80,7 @@ void TaskTouchTFT (uint32_t arg)
 	while (1)
 	{
 		// Wait for new data
-		while (!TaskTouch_Receive(&touch))
-			KERNEL_SVCForceContextSwitchDelay(5);
+		TaskTouch_Receive(&touch);
 
 		// Print result
 		TFT_Color = 0xFFFF;
@@ -131,5 +137,3 @@ void TaskTouchTFT (uint32_t arg)
 		}
 	}
 }
-
-#endif//STM

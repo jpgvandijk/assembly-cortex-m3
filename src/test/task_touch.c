@@ -4,10 +4,10 @@
 *
 ************************************************************************************/
 
-#ifdef STM
-
 // Includes
 #include "task_touch.h"
+
+#ifdef _USE_TASK_TOUCH_
 
 // Global constants
 const KERNEL_TaskDescriptor TaskDescriptor_TaskTouch = {TaskTouch, 0, TASK_TOUCH_STACK_SIZE, TASK_TOUCH_PRIORITY, "Touch"};
@@ -17,112 +17,58 @@ volatile uint8_t TaskTouch_Mode = TASK_TOUCH_MODE_ANALYSE;		// No lock, since on
 
 // Private global variables
 static KERNEL_TaskTableEntry * task;
-static struct
-{
-	uint8_t					lock;								// This structure may only be changed if access granted
-	uint8_t					tx_index;							// Points to where it can immediately write
-	uint8_t					rx_index;							// Points to where it can immediately read
-	TouchMessage_TypeDef	messages[TASK_TOUCH_QUEUE_SIZE];	// The actual queue
-} queue;
-
-// Private global variables (since practically always active)
-static TouchMessage_TypeDef touch;
-static uint32_t time;
-static uint16_t measurement[4];
-static uint32_t pressure;
-static uint16_t x;
-static uint16_t y;
-static int16_t dx;
-static int16_t dy;
-static uint16_t abs_dx;
-static uint16_t abs_dy;
+static KERNEL_QueueStructure queue;
+static uint32_t queue_buffer[TASK_TOUCH_QUEUE_SIZE];
+static uint8_t touch_type;
+static uint16_t touch_x, touch_y;
 
 // Private functions
-static void TaskTouch_Send (TouchMessage_TypeDef* message);
+void TaskTouch_Send (void);
 
-
-
-
-
+// This function must be called before starting the kernel
 void TaskTouch_Init (void)
 {
 	// Initialise the TOUCH chip
 	TOUCH_Init();
 
-	// Initialise indices and lock
-	queue.tx_index = 0;
-	queue.rx_index = 0;
-	queue.lock = 0;
+	// Initialise the queue
+	KERNEL_QueueInit(&queue, TASK_TOUCH_LOCK_TIMEOUT, KERNEL_QueueBufferSpecs(TASK_TOUCH_QUEUE_SIZE, KERNEL_QueueElementSizeWord), queue_buffer);
 }
 
-static void TaskTouch_Send (TouchMessage_TypeDef* message)
+void TaskTouch_Send (void)
 {
-	// Lock the queue
-	while (KERNEL_GetExclusiveAccess(&queue.lock))
-		KERNEL_SVCForceContextSwitchDelay(TASK_TOUCH_LOCK_TIMEOUT);
-
-	// Check if the queue is full
-	uint32_t full;
-	if (queue.rx_index == 0)
-		full = (queue.tx_index == TASK_TOUCH_QUEUE_SIZE - 1);
-	else
-		full = (queue.tx_index == queue.rx_index - 1);
-
-	// Only send if not full
-	if (!full)
-	{
-		// Add element and increment index
-		queue.messages[queue.tx_index] = *message;
-		queue.tx_index++;
-		if (queue.tx_index == TASK_TOUCH_QUEUE_SIZE)
-			queue.tx_index = 0;
-	}
-
-	// Unlock the queue
-	KERNEL_ClearExclusiveAccess(&queue.lock);
+	// Pack and send the data: 8-bit type, 12-bit x, 12-bit y
+	uint32_t data = touch_type | (touch_x << 8) | (touch_y << 20);
+	KERNEL_QueueSend(&queue, data);
 }
 
-uint32_t TaskTouch_Receive (TouchMessage_TypeDef* message)
+void TaskTouch_Receive (TouchMessage_TypeDef * message)
 {
-	uint32_t new = 0;
-
-	// Lock the queue
-	while (KERNEL_GetExclusiveAccess(&queue.lock))
-		KERNEL_SVCForceContextSwitchDelay(TASK_TOUCH_LOCK_TIMEOUT);
-
-	// Check if the queue is empty
-	uint32_t empty = (queue.tx_index == queue.rx_index);
-
-	// Only receive if not empty
-	if (!empty)
-	{
-		// Get element and increment index
-		*message = queue.messages[queue.rx_index];
-		queue.rx_index++;
-		if (queue.rx_index == TASK_TOUCH_QUEUE_SIZE)
-			queue.rx_index = 0;
-
-		// Notify reception
-		new = 1;
-	}
-
-	// Unlock the queue
-	KERNEL_ClearExclusiveAccess(&queue.lock);
-
-	// Return whether new data was received
-	return new;
+	// Wait for data reception and unpack
+	uint32_t data = KERNEL_QueueReceive(&queue, 1);
+	message->type = data & 0xFF;
+	message->x = (data >> 8) & 0xFFF;
+	message->y = (data >> 20) & 0xFFF;
 }
 
 void TaskTouch (uint32_t arg)
 {
-	touch.type = TOUCH_TYPE_INTERNAL_RESET;
+	// Local variables
+	uint32_t time;
+	uint16_t measurement[4];
+	uint32_t pressure;
+	uint16_t x, y;
+	int16_t dx, dy;
+	uint16_t abs_dx, abs_dy;
+
+	touch_type = TOUCH_TYPE_INTERNAL_RESET;
 	while (1)
 	{
 		// Check if screen is no longer touched
-		if (*((volatile uint32_t *) TOUCH_IRQ_IDR) & (1 << TOUCH_IRQ_PIN))
+		if (PIN_Read(TOUCH_IRQ_GPIO, TOUCH_IRQ_PIN))
 		{
 			// Send movement analysis result
-			switch (touch.type)
+			switch (touch_type)
 			{
 			case TOUCH_TYPE_TAP:
 
@@ -136,70 +82,70 @@ void TaskTouch (uint32_t arg)
 					do {
 						KERNEL_SVCForceContextSwitchPeriodic(TASK_TOUCH_PERIOD);
 						time++;
-						if (!(*((volatile uint32_t *) TOUCH_IRQ_IDR) & (1 << TOUCH_IRQ_PIN)))
+						if (!PIN_Read(TOUCH_IRQ_GPIO, TOUCH_IRQ_PIN))
 						{
 							// Early touch
 							// FIXME: goto is terrible
-							touch.type = TOUCH_TYPE_TAP_DOUBLE;
+							touch_type = TOUCH_TYPE_TAP_DOUBLE;
 							goto _measure_;
 						}
 					} while (time < TOUCH_DOUBLE_TAP_MAX_TIME);
 
 					// No other touch, hence it was a tap
-					TaskTouch_Send(&touch);
+					TaskTouch_Send();
 				}
 				break;
 
 			case TOUCH_TYPE_TAP_DOUBLE:
 
 				// Second touch failed to be properly registered, assume single tap
-				touch.type = TOUCH_TYPE_TAP;
-				TaskTouch_Send(&touch);
+				touch_type = TOUCH_TYPE_TAP;
+				TaskTouch_Send();
 				break;
 
 			case TOUCH_TYPE_HOLD_BEGIN:
 
-				touch.type = TOUCH_TYPE_HOLD_END;
-				TaskTouch_Send(&touch);
+				touch_type = TOUCH_TYPE_HOLD_END;
+				TaskTouch_Send();
 				break;
 
 			case TOUCH_TYPE_SWIPE_RIGHT:
 
 				// Report average line + speed
-				touch.y = (touch.y + y) >> 1;
-				touch.x_speed = abs_dx / time;
-				TaskTouch_Send(&touch);
+				touch_y = (touch_y + y) >> 1;
+				touch_x = abs_dx / time;
+				TaskTouch_Send();
 				break;
 
 			case TOUCH_TYPE_SWIPE_LEFT:
 
 				// Report average line + speed
-				touch.y = (touch.y + y) >> 1;
-				touch.x_speed = abs_dx / time;
-				TaskTouch_Send(&touch);
+				touch_y = (touch_y + y) >> 1;
+				touch_x = abs_dx / time;
+				TaskTouch_Send();
 				break;
 
 			case TOUCH_TYPE_SWIPE_DOWN:
 
 				// Report average line + speed
-				touch.x = (touch.x + x) >> 1;
-				touch.y_speed = abs_dy / time;
-				TaskTouch_Send(&touch);
+				touch_x = (touch_x + x) >> 1;
+				touch_y = abs_dy / time;
+				TaskTouch_Send();
 				break;
 
 			case TOUCH_TYPE_SWIPE_UP:
 
 				// Report average line + speed
-				touch.x = (touch.x + x) >> 1;
-				touch.y_speed = abs_dy / time;
-				TaskTouch_Send(&touch);
+				touch_x = (touch_x + x) >> 1;
+				touch_y = abs_dy / time;
+				TaskTouch_Send();
 				break;
 
 			case TOUCH_TYPE_RAW:
 
 				// Send end signal
-				touch.type = TOUCH_TYPE_RAW_END;
-				TaskTouch_Send(&touch);
+				touch_type = TOUCH_TYPE_RAW_END;
+				TaskTouch_Send();
 				break;
 
 			default:
@@ -217,12 +163,12 @@ void TaskTouch (uint32_t arg)
 			if (TaskTouch_Mode == TASK_TOUCH_MODE_ANALYSE)
 			{
 				// Start new analyses
-				touch.type = TOUCH_TYPE_INTERNAL_BEGIN;
+				touch_type = TOUCH_TYPE_INTERNAL_BEGIN;
 			}
 			else
 			{
 				// Send RAW data
-				touch.type = TOUCH_TYPE_RAW;
+				touch_type = TOUCH_TYPE_RAW;
 			}
 		}
 
@@ -249,22 +195,22 @@ _measure_:
 			// Determine the coordinate
 			x = 319 - (measurement[1] - TOUCH_X_MIN) / TOUCH_X_SCALE;
 			y = (measurement[0] - TOUCH_Y_MIN) / TOUCH_Y_SCALE;
-			dx = x - touch.x;
-			dy = y - touch.y;
+			dx = x - touch_x;
+			dy = y - touch_y;
 			abs_dx = (dx < 0) ? -dx : dx;
 			abs_dy = (dy < 0) ? -dy : dy;
 
 			// Analyse movement
 			time++;
-			switch (touch.type)
+			switch (touch_type)
 			{
 			case TOUCH_TYPE_INTERNAL_BEGIN:
 
 				// Store start
-				touch.x = x;
-				touch.y = y;
+				touch_x = x;
+				touch_y = y;
 				time = 0;
-				touch.type = TOUCH_TYPE_TAP;
+				touch_type = TOUCH_TYPE_TAP;
 				break;
 
 			case TOUCH_TYPE_TAP:
@@ -272,14 +218,14 @@ _measure_:
 				// Check if still close
 				if ((abs_dx < TOUCH_CLOSE_DISTANCE) && (abs_dy < TOUCH_CLOSE_DISTANCE))
 				{
-					touch.x = (touch.x + x) >> 1;
-					touch.y = (touch.y + y) >> 1;
+					touch_x = (touch_x + x) >> 1;
+					touch_y = (touch_y + y) >> 1;
 
 					// Long time at starting position?
 					if (time > TOUCH_HOLD_THRESHOLD)
 					{
-						touch.type = TOUCH_TYPE_HOLD_BEGIN;
-						TaskTouch_Send(&touch);
+						touch_type = TOUCH_TYPE_HOLD_BEGIN;
+						TaskTouch_Send();
 					}
 				}
 				else
@@ -287,14 +233,14 @@ _measure_:
 					// Determine direction of movement
 					if (abs_dx > abs_dy)
 						if (dx > 0)
-							touch.type = TOUCH_TYPE_SWIPE_RIGHT;
+							touch_type = TOUCH_TYPE_SWIPE_RIGHT;
 						else
-							touch.type = TOUCH_TYPE_SWIPE_LEFT;
+							touch_type = TOUCH_TYPE_SWIPE_LEFT;
 					else
 						if (dy > 0)
-							touch.type = TOUCH_TYPE_SWIPE_DOWN;
+							touch_type = TOUCH_TYPE_SWIPE_DOWN;
 						else
-							touch.type = TOUCH_TYPE_SWIPE_UP;
+							touch_type = TOUCH_TYPE_SWIPE_UP;
 				}
 				break;
 
@@ -303,20 +249,20 @@ _measure_:
 				// Check if second tap is close to the first one
 				if ((abs_dx < TOUCH_CLOSE_DISTANCE) && (abs_dy < TOUCH_CLOSE_DISTANCE))
 				{
-					TaskTouch_Send(&touch);
-					touch.type = TOUCH_TYPE_INTERNAL_RESET;
+					TaskTouch_Send();
+					touch_type = TOUCH_TYPE_INTERNAL_RESET;
 				}
 				else
 				{
 					// Other touch not close, hence it was a tap
-					touch.type = TOUCH_TYPE_TAP;
-					TaskTouch_Send(&touch);
+					touch_type = TOUCH_TYPE_TAP;
+					TaskTouch_Send();
 
 					// Recover from this initial assumption to recognise the new movement
-					touch.x = x;
-					touch.y = y;
+					touch_x = x;
+					touch_y = y;
 					time = 0;
-					touch.type = TOUCH_TYPE_TAP;
+					touch_type = TOUCH_TYPE_TAP;
 				}
 
 				break;
@@ -326,14 +272,14 @@ _measure_:
 				// Check if still close
 				if ((abs_dx < TOUCH_CLOSE_DISTANCE) && (abs_dy < TOUCH_CLOSE_DISTANCE))
 				{
-					touch.x = (touch.x + x) >> 1;
-					touch.y = (touch.y + y) >> 1;
+					touch_x = (touch_x + x) >> 1;
+					touch_y = (touch_y + y) >> 1;
 				}
 				else
 				{
-					touch.type = TOUCH_TYPE_HOLD_END;
-					TaskTouch_Send(&touch);
-					touch.type = TOUCH_TYPE_INTERNAL_RESET;
+					touch_type = TOUCH_TYPE_HOLD_END;
+					TaskTouch_Send();
+					touch_type = TOUCH_TYPE_INTERNAL_RESET;
 				}
 				break;
 
@@ -341,36 +287,36 @@ _measure_:
 
 				// Check if still moving in the same direction
 				if (!(dx > 2*abs_dy))
-					touch.type = TOUCH_TYPE_INTERNAL_RESET;
+					touch_type = TOUCH_TYPE_INTERNAL_RESET;
 				break;
 
 			case TOUCH_TYPE_SWIPE_LEFT:
 
 				// Check if still moving in the same direction
 				if (!(-dx > 2*abs_dy))
-					touch.type = TOUCH_TYPE_INTERNAL_RESET;
+					touch_type = TOUCH_TYPE_INTERNAL_RESET;
 				break;
 
 			case TOUCH_TYPE_SWIPE_DOWN:
 
 				// Check if still moving in the same direction
 				if (!(dy > 2*abs_dx))
-					touch.type = TOUCH_TYPE_INTERNAL_RESET;
+					touch_type = TOUCH_TYPE_INTERNAL_RESET;
 				break;
 
 			case TOUCH_TYPE_SWIPE_UP:
 
 				// Check if still moving in the same direction
 				if (!(-dy > 2*abs_dx))
-					touch.type = TOUCH_TYPE_INTERNAL_RESET;
+					touch_type = TOUCH_TYPE_INTERNAL_RESET;
 				break;
 
 			case TOUCH_TYPE_RAW:
 
 				// Send coordinate
-				touch.x = x;
-				touch.y = y;
-				TaskTouch_Send(&touch);
+				touch_x = x;
+				touch_y = y;
+				TaskTouch_Send();
 				break;
 
 			default:
@@ -393,4 +339,4 @@ void TOUCH_IRQ_HANDLER (void)
 	*((volatile uint32_t *) EXTI_PR) = (1 << TOUCH_IRQ_PIN);
 }
 
-#endif//STM
+#endif//_USE_TASK_TOUCH_

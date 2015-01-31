@@ -8,8 +8,6 @@
 *
 ************************************************************************************/
 
-#ifdef STM
-
 // Includes
 #include <stdint.h>
 #include "stm32f103ve.h"
@@ -17,20 +15,26 @@
 #include "spi1.h"
 #include "flash.h"
 
-// Linker script
-extern uint32_t __ext_StartAddress;
-
 // Flash memory
-uint8_t data[8] __attribute__ ((section (".ext"))) = { 7, 6, 5, 4, 3, 2, 1, 0 };
+uint8_t data[8] IN_EXTERNAL_FLASH = {7, 6, 5, 4, 3, 2, 1, 0};
 
 // Buffers
 uint8_t buffer1[4];
 uint8_t buffer2[16];
 uint8_t buffer3;
 
-void spi1_flash_test (void)
+void main (void)
 {
-	// Enable the DMA1
+	// Init the system clock
+	SystemInitClock();
+	
+	// Enable the peripherals
+	SystemEnablePeripheral(PERIPHERAL_AFIO);
+	SystemEnablePeripheral(PERIPHERAL_IOPA);
+	SystemEnablePeripheral(PERIPHERAL_IOPB);
+	SystemEnablePeripheral(PERIPHERAL_IOPC);
+	SystemEnablePeripheral(PERIPHERAL_IOPD);
+	SystemEnablePeripheral(PERIPHERAL_IOPE);
 	SystemEnablePeripheral(PERIPHERAL_DMA1);
 	
 	// Init the FLASH chip and SPI module
@@ -42,11 +46,12 @@ void spi1_flash_test (void)
 	
 	// Read data from the FLASH
 	FLASH_ReadBytes(0, buffer1, 1);
-	FLASH_ReadBytes(data - __ext_StartAddress, buffer2, 16);
+	FLASH_ReadBytes(FROM_EXTERNAL_FLASH(data), buffer2, 16);
 	buffer3 = FLASH_ReadByte(0);
 
 	// Clear access to the module
 	SPI1_ClearExclusiveAccess();
+	
+	// Infinite loop
+	while (1);
 }
-
-#endif//STM

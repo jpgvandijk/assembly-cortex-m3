@@ -4,8 +4,6 @@
 *
 ************************************************************************************/
 
-#ifdef LPC
-
 // Includes
 #include <stdint.h>
 #include "lpc1769.h"
@@ -15,8 +13,11 @@
 // Debugging variables
 volatile uint32_t status;
 
-void i2c1_test (void)
+void main (void)
 {
+	// Init the system clock
+	SystemInitClock();
+
 	// Init the I2C module
 	I2C1_Init();
 
@@ -54,5 +55,3 @@ void i2c1_test (void)
 	// Check the result (available during debugging)
 	while (I2C1_Buffer[0]);
 }
-
-#endif//LPC

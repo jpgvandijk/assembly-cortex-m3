@@ -2,33 +2,11 @@
 *
 * Author: J.P.G. van Dijk
 *
-*
-* FLASH DIFFERENCES:		LPC	STM
-*
-* interrupt_vectors			204	304
-* section_table				40	20
-* Reset_Handler				72	24
-* CRPWord					4	0
-* PIN_Config				56	32
-* SystemInitClock			104	64
-* SystemGetClock			88	72
-* SystemPeripheral			48	16
-* main						14	20
-* main_other				4	0		+
-* --------------------------------------
-* TOTAL						634	552
-*
-* Timer_Handler				232	252
-* OW_StartTransfer			64	68
-* OW_Init					44	56
-* OW_InitPin				56	32		+
-* --------------------------------------
-* TOTAL						396	408
-*
 ************************************************************************************/
 
 // Includes
 #include <stdint.h>
+#include "config.h"
 #ifdef LPC
 	#include "lpc1769.h"
 #endif
@@ -36,6 +14,7 @@
 	#include "stm32f103ve.h"
 #endif
 #include "kernel.h"
+#include "system.h"
 #include "onewire.h"
 
 // Function prototypes
@@ -49,8 +28,11 @@ const KERNEL_TaskDescriptor TaskDescriptor_TaskOW = {TaskOW, 0, (KERNEL_MinimumT
 const KERNEL_TaskDescriptor TaskDescriptor_TaskOWPerformance = {TaskOWPerformance, 0, (KERNEL_MinimumTaskStackSpace + 64), 1, "Prfmn"};
 
 // Main
-void onewire_test (void)
+void main (void)
 {
+	// Init the system clock
+	SystemInitClock();
+
 	// Init the onewire module
 	OW_Init();
 	OWSearch_Init();

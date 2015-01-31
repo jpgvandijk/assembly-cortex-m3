@@ -4,8 +4,6 @@
 *
 ************************************************************************************/
 
-#ifdef STM
-
 // Includes
 #include <stdint.h>
 #include "stm32f103ve.h"
@@ -34,9 +32,18 @@ const KERNEL_TaskDescriptor TaskDescriptor_TaskTFT = {TaskTFT, 0, (KERNEL_Minimu
 const KERNEL_TaskDescriptor TaskDescriptor_TaskTFTPerformance = {TaskTFTPerformance, 0, (KERNEL_MinimumTaskStackSpace + 64), 1, "Prfmn"};
 
 // Main
-void tft_test (void)
+void main (void)
 {
-	// Enable the DMA1
+	// Init the system clock
+	SystemInitClock();
+	
+	// Enable the peripherals
+	SystemEnablePeripheral(PERIPHERAL_AFIO);
+	SystemEnablePeripheral(PERIPHERAL_IOPA);
+	SystemEnablePeripheral(PERIPHERAL_IOPB);
+	SystemEnablePeripheral(PERIPHERAL_IOPC);
+	SystemEnablePeripheral(PERIPHERAL_IOPD);
+	SystemEnablePeripheral(PERIPHERAL_IOPE);
 	SystemEnablePeripheral(PERIPHERAL_DMA1);
 	
 	// Init the FLASH chip and SPI module
@@ -200,5 +207,3 @@ void TaskTFTPerformance (uint32_t arg)
 	volatile uint32_t i = 0;
 	while (1) i++;
 }
-
-#endif//STM
