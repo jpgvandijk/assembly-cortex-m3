@@ -3,6 +3,8 @@
 * Author: J.P.G. van Dijk
 *
 * FIXME: disable interrupts/scheduler?
+* TODO: include auto-wakeup + add svc functions for operation without multitasking,
+* however delay in high priority IRQ handler not desired...
 *
 ************************************************************************************/
 
@@ -11,6 +13,8 @@
 
 			#include	"cortex_m3.h"
 			#include	"kernel.h"
+			
+			#ifdef		_USE_KERNEL_
 
 
 
@@ -390,3 +394,5 @@ _kernel_restore_context_and_return_:
 
 
 
+
+			#endif

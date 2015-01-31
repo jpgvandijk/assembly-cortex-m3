@@ -43,6 +43,15 @@ extern void ITM_SendPort0 (char character);
 #define NULL 			0
 
 //----------------------------------------------------
+// BITBANDING
+//----------------------------------------------------
+
+#ifndef __ASSEMBLER__
+#define SRAM_BITBAND(Reg, Bit)			(*(volatile uint32_t*) (((uint32_t)0x22000000) | (((uint32_t)&(Reg) - ((uint32_t)0x20000000)) << 5) | ((Bit) << 2)))
+#define PERIPH_BITBAND(Reg, Bit)		(*(volatile uint32_t*) (((uint32_t)0x42000000) | (((uint32_t)&(Reg) - ((uint32_t)0x40000000)) << 5) | ((Bit) << 2)))
+#endif//__ASSEMBLER__
+
+//----------------------------------------------------
 // NVIC
 //----------------------------------------------------
 

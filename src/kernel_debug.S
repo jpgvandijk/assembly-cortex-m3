@@ -10,6 +10,8 @@
 			#include	"cortex_m3.h"
 			#include	"kernel.h"
 			#include	"print.h"
+			
+			#ifdef		_USE_KERNEL_
 
 
 
@@ -83,3 +85,5 @@ KERNEL_DEBUG_TaskSwitch:
 
 
 
+
+			#endif

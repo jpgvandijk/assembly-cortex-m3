@@ -7,28 +7,57 @@
 #ifndef _KERNEL_H_
 #define _KERNEL_H_
 
+// Includes
+#include "config.h"
+
+// Make it possible to use only the heap
+#ifdef _USE_KERNEL_HEAP_ONLY_
+	#define _USE_KERNEL_HEAP_
+#endif
+#ifdef _USE_KERNEL_
+	#define _USE_KERNEL_HEAP_
+#endif
+
+#ifdef _USE_KERNEL_HEAP_
+
 /************************************************************
-* Configuration												*
+* Definitions												*
 ************************************************************/
 
-// The amount of memory that can be dynamically allocated and freed
-// Must be a multiple of 4 bytes!
-// For 2048 bytes  max:
-//	1 block of 2040 bytes (0 39% overhead  best-case)
-//	170 blocks of 1 byte (92% overhead  worst-case)
-#define CONFIG_HeapSize 							2048
+// Definitions for the heap
+#define KERNEL_HeapLinkStructFieldNext 				0	// Must be 0!
+#define KERNEL_HeapLinkStructFieldSize 				4
+#define KERNEL_HeapLinkStructSize 					8
+#define KERNEL_HeapMinFragmentSize 					(KERNEL_HeapLinkStructSize + 4)
 
-// The maximum number of tasks alive  1 is used for the idle task
-#define CONFIG_TaskTableEntries 					10
+#ifndef __ASSEMBLER__
 
-// The number of task priorities  the lowest priority must be reserved for the idle task
-#define CONFIG_ImplementedPriorities 				4
+/************************************************************
+* KERNEL_HEAP.S												*
+************************************************************/
 
-// Configure the interrupt priorities
-#define CONFIG_PriorityGrouping 					PriorityGrouping_Preempt2Sub3	// 4 preemption levels and 8 sublevels
-#define CONFIG_PrioritySysTick 						((0 << 3) | 0)					// Highest priority (should not be missed and very fast handler)
-#define CONFIG_PrioritySVC 							((2 << 3) | 0)					// Only preempts preempt priority 3 (lowest)
-#define CONFIG_PriorityPendSV 						((3 << 3) | 7)					// Lowest priority
+// Structures
+typedef struct _HeapLinkStruct_
+{
+	struct _HeapLinkStruct_ * Next;
+	uint16_t Size;
+	uint16_t Reserved;
+} KERNEL_HeapLinkStruct;
+
+// Global variables
+extern uint32_t KERNEL_Heap[CONFIG_HeapSize / 4];
+extern KERNEL_HeapLinkStruct * KERNEL_HeapEmptyList;
+
+// Global functions
+extern void KERNEL_InitHeap (void);
+extern uint32_t * KERNEL_Alloc (uint32_t size);
+extern void KERNEL_Free (uint32_t * block);
+
+#endif//__ASSEMBLER__
+
+#endif//_USE_KERNEL_HEAP_
+
+#ifdef _USE_KERNEL_
 
 /************************************************************
 * Definitions												*
@@ -50,12 +79,6 @@
 
 #define SVC_IRQDisable								0
 #define SVC_IRQEnable								1
-
-// Definitions for the heap
-#define KERNEL_HeapLinkStructFieldNext 				0	// Must be 0!
-#define KERNEL_HeapLinkStructFieldSize 				4
-#define KERNEL_HeapLinkStructSize 					8
-#define KERNEL_HeapMinFragmentSize 					(KERNEL_HeapLinkStructSize + 4)
 
 // Definitions for the task table entries
 #define KERNEL_TaskTableEntryFieldNext 				0	// Must be 0!
@@ -117,6 +140,14 @@
 #define KERNEL_QueueStructureFieldElementSize		5
 #define KERNEL_QueueStructureFieldBuffer			6
 
+// Queue element size definitions
+#define KERNEL_QueueElementSizeByte					0
+#define KERNEL_QueueElementSizeHalfword				1
+#define KERNEL_QueueElementSizeWord					2
+
+// Buffer specs packing
+#define KERNEL_QueueBufferSpecs(BufferSize, ElementSize)		(((ElementSize) << 8) | ((BufferSize) - 1))
+
 #ifndef __ASSEMBLER__
 
 /************************************************************
@@ -174,27 +205,6 @@ void KERNEL_SVCFree (uint32_t * ptr);
 void KERNEL_SVCIRQ (uint32_t IRQnumber, uint32_t state);
 
 /************************************************************
-* KERNEL_HEAP.S												*
-************************************************************/
-
-// Structures
-typedef struct _HeapLinkStruct_
-{
-	struct _HeapLinkStruct_ * Next;
-	uint16_t Size;
-	uint16_t Reserved;
-} KERNEL_HeapLinkStruct;
-
-// Global variables
-extern uint32_t KERNEL_Heap[2048 / 4];
-extern KERNEL_HeapLinkStruct * KERNEL_HeapEmptyList;
-
-// Global functions
-extern void KERNEL_InitHeap (void);
-extern uint32_t * KERNEL_Alloc (uint32_t size);
-extern void KERNEL_Free (uint32_t * block);
-
-/************************************************************
 * KERNEL_SCHEDULER.S										*
 ************************************************************/
 
@@ -217,8 +227,8 @@ typedef struct _TaskTableEntryType_
 } KERNEL_TaskTableEntry;
 
 // Global variables
-extern KERNEL_TaskTableEntry KERNEL_TaskTable[10];
-extern KERNEL_TaskTableEntry * KERNEL_TaskReadyLists[4];
+extern KERNEL_TaskTableEntry KERNEL_TaskTable[CONFIG_TaskTableEntries];
+extern KERNEL_TaskTableEntry * KERNEL_TaskReadyLists[CONFIG_ImplementedPriorities];
 extern KERNEL_TaskTableEntry * KERNEL_TaskDelayedList;
 extern KERNEL_TaskTableEntry * KERNEL_TaskDelayedListOverflow;
 extern KERNEL_TaskTableEntry * KERNEL_TaskRunning;
@@ -262,7 +272,7 @@ typedef struct
 } KERNEL_QueueStructure;
 
 // Global functions
-extern void KERNEL_QueueInit (KERNEL_QueueStructure * structure, uint8_t LockDelay, uint8_t BufferSize, uint8_t ElementSize);
+extern void KERNEL_QueueInit (KERNEL_QueueStructure * structure, uint8_t LockDelay, uint16_t BufferSpecs, void * buffer);
 extern void KERNEL_QueueSend (KERNEL_QueueStructure * structure, uint32_t Element);
 extern uint32_t KERNEL_QueueReceive (KERNEL_QueueStructure * structure, uint32_t WaitForData);
 
@@ -275,5 +285,7 @@ extern void KERNEL_DEBUG_Init (void);
 extern void KERNEL_DEBUG_TaskSwitch (uint32_t reserved0, uint32_t reserved1, KERNEL_TaskTableEntry * task);
 
 #endif//__ASSEMBLER__
+
+#endif//_USE_KERNEL_
 
 #endif//_KERNEL_H_

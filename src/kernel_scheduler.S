@@ -11,6 +11,8 @@
 
 			#include	"cortex_m3.h"
 			#include	"kernel.h"
+			
+			#ifdef		_USE_KERNEL_
 
 
 
@@ -150,7 +152,7 @@ KERNEL_Init:
 			push		{lr}
 
 			@ Initialize debugging if used
-			#ifdef		KERNEL_DEBUG
+			#ifdef		DEBUG_KERNEL
 			bl			KERNEL_DEBUG_Init
 			#endif
 
@@ -560,3 +562,5 @@ KERNEL_KillTask:
 
 
 
+
+			#endif

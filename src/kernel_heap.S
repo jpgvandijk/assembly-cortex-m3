@@ -21,6 +21,8 @@
 
 			#include	"cortex_m3.h"
 			#include	"kernel.h"
+			
+			#ifdef		_USE_KERNEL_HEAP_
 
 
 
@@ -34,19 +36,10 @@
 			.global		KERNEL_Heap
 			.global		KERNEL_HeapEmptyList
 
-			@ Variables (debug)
-			.global		DEBUG_Heap
-			.global		DEBUG_HeapPointers
-
 			@ Functions
 			.global		KERNEL_InitHeap
 			.global		KERNEL_Alloc
 			.global		KERNEL_Free
-
-			@ Functions (debug)
-			.global		DEBUG_HeapUpdate
-			.global		DEBUG_HeapTest
-			.global		DEBUG_HeapTestMerge
 
 
 
@@ -310,3 +303,5 @@ HeapManagement_END:
 
 
 
+
+			#endif

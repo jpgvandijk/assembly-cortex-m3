@@ -8,6 +8,8 @@
 			.syntax		unified
 
 			#include	"kernel.h"
+			
+			#ifdef		_USE_KERNEL_
 
 
 
@@ -79,3 +81,5 @@ KERNEL_ClearExclusiveAccess:
 
 
 
+
+			#endif

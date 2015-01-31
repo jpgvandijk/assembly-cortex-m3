@@ -8,6 +8,8 @@
 			.syntax		unified
 
 			#include	"kernel.h"
+			
+			#ifdef		_USE_KERNEL_
 
 
 
@@ -37,12 +39,14 @@ KERNEL_QueueInit:
 			@ Arguments:
 			@ r0: queue structure
 			@ r1: lock delay, in case exclusive access is not granted
-			@ r2: buffer size, number of elements -1 encoded
-			@ r3: element size, only byte (0), halfword (1), word (2) allowed
+			@ r2: buffer specs
+			@		0:7 = buffer size, number of elements -1 encoded
+			@		8:15 = element size, only byte (0), halfword (1), word (2) allowed
+			@ r3: buffer
 
 			@ Set the element and buffer size
-			strb		r2, [r0, KERNEL_QueueStructureFieldBufferSize]
-			strb		r3, [r0, KERNEL_QueueStructureFieldElementSize]
+			strh		r2, [r0, KERNEL_QueueStructureFieldBufferSize]
+			str			r3, [r0, KERNEL_QueueStructureFieldBuffer]
 
 			@ Reset the lock and indices
 			movs		r2, #0
@@ -199,3 +203,5 @@ KERNEL_QueueReceive:
 
 
 
+
+			#endif
