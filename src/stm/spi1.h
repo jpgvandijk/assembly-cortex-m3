@@ -10,6 +10,9 @@
 // Includes
 #include "stm32f103ve.h"
 #include "kernel.h"
+#include "config.h"
+
+#ifdef _USE_SPI1_
 
 // Configuration
 #define SPI1_EXCLUSIVE_ACCESS_DELAY 			1
@@ -34,5 +37,7 @@ extern void SPI1_WaitTXOnlyWithDMA (void);
 extern void SPI1_DisableTXOnlyWithDMA (void);
 
 #endif//__ASSEMBLER__
+
+#endif//_USE_SPI1_
 
 #endif//_SPI1_H_

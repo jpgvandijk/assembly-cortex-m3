@@ -8,6 +8,8 @@
 			.syntax		unified
 
 			#include	"fat.h"
+			
+			#ifdef		_USE_FAT_
 
 
 
@@ -2082,11 +2084,4 @@ _fat_additem_error_:
 
 
 
-
-
-
-@ TODO: Load/Save/Delete Functions: load/save update policy automatically!
-@ 1) delete: simple LRU will work
-@ 2) search during edit: don't update LRU at all? opened file remains MRU
-@ 2) finding non-empty after empty in finding contiguous: don't update the LRU at all? empty entry remains MRU
-@ 3) clearing a cluster for entries: start from last without updating the MRU, not even required on last?
+			#endif

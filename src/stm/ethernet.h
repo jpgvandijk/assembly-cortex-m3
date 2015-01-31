@@ -9,7 +9,9 @@
 
 // Includes
 #include "stm32f103ve.h"
-#include "board.h"
+#include "config.h"
+
+#ifdef _USE_ETHERNET_
 
 // Definitions
 #define ETH_ANALYZE_TYPE_ERROR			0
@@ -102,5 +104,7 @@ extern void ETH_SendTCPSYN (uint8_t * server_MAC, uint8_t * server_IP, uint16_t 
 #define ETH_TCP_WIN_SIZE				48
 #define ETH_TCP_CHECKSUM				50
 #define ETH_TCP_OPTIONS					54
+
+#endif//_USE_ETHERNET_
 
 #endif//_ETHERNET_H_

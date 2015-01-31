@@ -13,6 +13,8 @@
 			.syntax		unified
 
 			#include	"spi3.h"
+			
+			#ifdef		_USE_SPI3_
 
 
 
@@ -240,3 +242,6 @@ SPI3_DisableDefault:
 
 
 
+
+			#endif
+			

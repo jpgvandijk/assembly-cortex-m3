@@ -845,7 +845,7 @@ Reset_Handler:
 			bl			InitBssSection
 			#endif
 
-			#ifdef		LPC
+			#ifdef		LPC_DIFFERENT_STARTUP
 
 			@ Jump to the correct main function
 			.extern		main		@ (int power_cycle)

@@ -9,6 +9,9 @@
 
 // Includes
 #include "sdcard.h"
+#include "config.h"
+
+#ifdef _USE_FAT_
 
 // Definitions
 #define PARTITION_TYPE_FAT16			16
@@ -121,5 +124,7 @@ extern uint32_t FAT_FindEmptyEntries (uint32_t cluster, uint32_t entries);
 extern uint32_t FAT_AddItem (uint32_t cluster, char * name, uint32_t type);
 
 #endif//__ASSEMBLER__
+
+#endif//_USE_FAT_
 
 #endif//_FAT_H_

@@ -11,12 +11,11 @@
 #include "stm32f103ve.h"
 #include "kernel.h"
 #include "flash.h"
-#include "board.h"
+#include "config.h"
 
-// Configuration and definitions
-#define TFT_CACHE_WIDTH_SIZE					96
-#define TFT_CACHE_CHAR_SIZE						384		// max: tft area/25!
-#define TFT_CHAR_SPACING						1
+#ifdef _USE_TFT_
+
+// Definitions
 #define TFT_FONT_WIDTH_VARIABLE					0xFF
 
 // Register definitions
@@ -59,5 +58,7 @@ extern void TFT_SelectFont (uint8_t * font);
 extern void TFT_PrintString (uint16_t x, uint16_t y, char * text);
 
 #endif//__ASSEMBLER__
+
+#endif//_USE_TFT_
 
 #endif//_TFT_H_

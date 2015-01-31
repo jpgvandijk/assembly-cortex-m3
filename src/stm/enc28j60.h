@@ -10,13 +10,11 @@
 // Includes
 #include "stm32f103ve.h"
 #include "kernel.h"
-#include "board.h"
+#include "config.h"
 
-// Definitions
-#define ENC_SPI_BAUDRATE				1
-#define ENC_IRQ_PRIORITY				8
+#ifdef _USE_ETHERNET_
 
-// FIXME: rename?
+// FIXME: rename
 #define RXSTART_INIT					0x0000
 #define RXSTOP_INIT						0x19FE
 #define TXSTART_INIT					0x19FF
@@ -279,5 +277,7 @@ extern void ENC_WriteBuffer (uint8_t * buffer, uint32_t length);
 #define PKTCTRL_PPADEN   0x04
 #define PKTCTRL_PCRCEN   0x02
 #define PKTCTRL_POVERRIDE 0x01
+
+#endif//_USE_ETHERNET_
 
 #endif//_ENC28J60_H_

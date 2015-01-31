@@ -8,6 +8,8 @@
 			.syntax		unified
 
 			#include	"uart1.h"
+			
+			#ifdef		_USE_UART1_
 
 
 
@@ -93,3 +95,6 @@ UART1_Tx:
 
 
 
+
+			#endif
+			

@@ -8,6 +8,8 @@
 			.syntax		unified
 
 			#include	"ethernet.h"
+			
+			#ifdef		_USE_ETHERNET_
 
 
 
@@ -706,3 +708,6 @@ ETH_SendTCPSYN:
 
 
 
+
+			#endif
+			

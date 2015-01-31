@@ -8,6 +8,7 @@
 #define _STARTUP_H_
 
 // Includes
+#include "config.h"
 #ifdef LPC
 	#include "lpc1769.h"
 #endif

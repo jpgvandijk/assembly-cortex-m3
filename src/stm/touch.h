@@ -9,11 +9,9 @@
 
 // Includes
 #include "stm32f103ve.h"
-#include "board.h"
+#include "config.h"
 
-// Definitions
-#define TOUCH_SPI_BAUDRATE				4	// TODO: check maximum baudrate!
-#define TOUCH_IRQ_PRIORITY				8	// FIXME: STM different interrupts than LPC!
+#ifdef _USE_TOUCH_
 
 #ifndef __ASSEMBLER__
 
@@ -22,5 +20,7 @@ extern void TOUCH_Init (void);
 extern void TOUCH_Read (uint16_t * buffer, uint32_t count);
 
 #endif//__ASSEMBLER__
+
+#endif//_USE_TOUCH_
 
 #endif//_TOUCH_H_

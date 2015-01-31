@@ -18,6 +18,8 @@
 			.syntax		unified
 
 			#include	"spi2.h"
+			
+			#ifdef		_USE_SPI2_
 
 
 
@@ -417,3 +419,6 @@ SPI2_DisableTXOnlyWithDMA:
 
 
 
+
+			#endif
+			

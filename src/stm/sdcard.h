@@ -10,32 +10,19 @@
 // Includes
 #include "stm32f103ve.h"
 #include "kernel.h"
-#include "board.h"
+#include "config.h"
+
+#ifdef _USE_SDCARD_
 
 // Definitions
-#define SDCARD_SPI_BAUDRATE_INIT		7
-#define SDCARD_SPI_BAUDRATE				0
-
 #define SDCARD_BLOCK_SIZE				512
 #define SDCARD_BLOCK_SIZE_LOG			9
-
 #define SDCARD_NO_BLOCK_CACHED			(-1)
-
 #define SDCARD_CRC_BYTE					0x95
-
-#define SDCARD_AUTODETECT
-#define SDCARD_CARD_DETECTION_PERIOD	500
-#define SDCARD_CARD_DETECTION_DELAY		1000
-#define SDCARD_INIT_DELAY_MS			2
-#define SDCARD_INIT_DELAY_CYCLES		20
-#define SDCARD_INIT_IDLE_DELAY_MS		10
-
-#define SDCARD_READ_TOKEN_TIMEOUT		100000
 #define SDCARD_WRITE_TOKEN				0xFE
-
-#define SDCARD_COMMAND_TIMEOUT			10
 #define SDCARD_COMMAND_TIMEOUT_RESPONSE	(-1)
 
+// Commands
 #define SDCARD_CMD0						((0 << 8) | (0b01 << 6) | 0)
 #define SDCARD_CMD1						((0 << 8) | (0b01 << 6) | 1)
 #define SDCARD_ACMD41					((0 << 8) | (0b01 << 6) | 41)
@@ -64,5 +51,7 @@ extern void SDCARD_Write (uint32_t block, uint8_t * buffer_with_token);
 extern void SDCARD_Error (void);
 
 #endif//__ASSEMBLER__
+
+#endif//_USE_SDCARD_
 
 #endif//_SDCARD_H_

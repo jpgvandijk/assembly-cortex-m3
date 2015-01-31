@@ -10,6 +10,7 @@
 #define _ONEWIRE_H_
 
 // Includes
+#include "config.h"
 #ifdef LPC
 	#include "lpc1769.h"
 #endif
@@ -17,43 +18,7 @@
 	#include "stm32f103ve.h"
 #endif
 
-// Configuration
-#define OW_WriteBufferSize 				16		// = 128-bit max, count allows for 64-kbits
-#define OW_ReadBufferSize 				16		// = 128-bit max, count allows for 64-kbits
-
-// Bitband addresses
-#ifdef LPC
-	#define OW_TransferWriteBufferBitband	(0x22000000 + 32 * (0x2007C000 - 0x20000000))
-	#define OW_TransferReadBufferBitband	(0x22000000 + 32 * (0x2007C010 - 0x20000000))
-	#define OWSearch_ROMBitband				(0x22000000 + 32 * (0x2007C020 - 0x20000000))
-#endif
-#ifdef STM
-	#define OW_TransferWriteBufferBitband	(0x22000000 + 32 * (0x20000000 - 0x20000000))
-	#define OW_TransferReadBufferBitband	(0x22000000 + 32 * (0x20000010 - 0x20000000))
-	#define OWSearch_ROMBitband				(0x22000000 + 32 * (0x20000020 - 0x20000000))
-#endif
-
-// Hardware
-#ifdef LPC
-	#define OW_Timer 					LPC_TIM0
-	#define OW_TimerPeripheral 			PERIPHERAL_TIM0
-	#define OW_TimerIRQn 				TIMER0_IRQn
-	#define OW_TimerHandler 			TIMER0_IRQHandler
-#endif
-#ifdef STM
-	#define OW_Timer 					STM_TIM2
-	#define OW_TimerPeripheral 			PERIPHERAL_TIM2
-	#define OW_TimerIRQn 				TIM2_IRQn
-	#define OW_TimerHandler 			TIM2_IRQHandler
-#endif
-
-// Timing
-#ifdef LPC
-	#define OW_TicksPerMicroSecond 		120
-#endif
-#ifdef STM
-	#define OW_TicksPerMicroSecond 		36
-#endif
+#ifdef _USE_ONEWIRE_
 
 // Timing
 #define OW_Period 					(70 * OW_TicksPerMicroSecond)
@@ -79,7 +44,7 @@
 #define OW_StateWrite 				3
 #define OW_StateRead 				4
 
-// Start of transfer  search result
+// Start of transfer/search result
 #define OW_OK 						0
 #define OW_Error 					1
 #define OW_Last 					2
@@ -107,7 +72,7 @@ extern int8_t OWSearch_LastDiscrepancy;
 extern uint64_t OWSearch_ROM;
 
 // Global functions
-extern void TIMER0_IRQHandler (void);
+extern void OW_TimerHandler (void);
 extern uint32_t OW_StartTransfer (uint32_t pin, uint32_t reset, uint32_t readwrite, void (*callback)(uint32_t * ow_data));
 extern void OW_Init (void);
 extern uint32_t OW_InitPin (uint32_t port, uint32_t pin);
@@ -118,5 +83,7 @@ extern void OWSearch_Algorithm (uint32_t * OW_TransferData);
 extern uint32_t OW_CheckCRC8 (uint8_t * buffer, uint32_t count);
 
 #endif//__ASSEMBLER__
+
+#endif//_USE_ONEWIRE_
 
 #endif//_ONEWIRE_H_

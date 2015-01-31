@@ -8,6 +8,8 @@
 			.syntax		unified
 
 			#include	"tft.h"
+			
+			#ifdef		_USE_TFT_
 
 
 
@@ -915,3 +917,6 @@ TFT_PrintString:
 
 
 
+
+			#endif
+			

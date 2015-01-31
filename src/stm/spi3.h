@@ -10,6 +10,9 @@
 // Includes
 #include "stm32f103ve.h"
 #include "kernel.h"
+#include "config.h"
+
+#ifdef _USE_SPI3_
 
 // Configuration
 #define SPI3_EXCLUSIVE_ACCESS_DELAY 			1
@@ -28,5 +31,7 @@ extern void SPI3_EnableDefault (void);
 extern void SPI3_DisableDefault (void);
 
 #endif//__ASSEMBLER__
+
+#endif//_USE_SPI3_
 
 #endif//_SPI3_H_

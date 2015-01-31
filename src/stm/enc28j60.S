@@ -25,6 +25,8 @@
 			.syntax		unified
 
 			#include	"enc28j60.h"
+			
+			#ifdef		_USE_ETHERNET_
 
 
 
@@ -859,3 +861,6 @@ ENC_WriteBuffer:
 
 
 
+
+			#endif
+			

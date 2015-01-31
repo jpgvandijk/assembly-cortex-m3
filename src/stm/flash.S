@@ -11,6 +11,8 @@
 			.syntax		unified
 
 			#include	"flash.h"
+			
+			#ifdef		_USE_FLASH_
 
 
 
@@ -175,3 +177,6 @@ FLASH_ReadBytes:
 
 
 
+
+			#endif
+			

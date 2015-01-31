@@ -8,6 +8,8 @@
 			.syntax		unified
 
 			#include	"sdcard.h"
+			
+			#ifdef		_USE_SDCARD_
 
 
 
@@ -456,3 +458,6 @@ SDCARD_Error:
 
 
 
+
+			#endif
+			

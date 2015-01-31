@@ -9,10 +9,11 @@
 
 // Includes
 #include "stm32f103ve.h"
-#include "board.h"
+#include "config.h"
+
+#ifdef _USE_FLASH_
 
 // Definitions
-#define FLASH_SPI_BAUDRATE				0
 #define FLASH_BASE_ADDRESS				__ext_StartAddress
 
 #ifndef __ASSEMBLER__
@@ -26,5 +27,7 @@ extern uint8_t FLASH_ReadByte (void * address);
 extern void FLASH_ReadBytes (void * address, uint8_t * buffer, uint32_t count);
 
 #endif//__ASSEMBLER__
+
+#endif//_USE_FLASH_
 
 #endif//_FLASH_H_

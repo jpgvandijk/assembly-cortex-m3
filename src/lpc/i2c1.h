@@ -9,10 +9,11 @@
 
 // Includes
 #include "lpc1769.h"
+#include "config.h"
+
+#ifdef _USE_I2C1_
 
 // Definitions
-#define I2C1_BUFFER_SIZE				32
-
 #define I2C1_STATE_IDLE					0
 #define I2C1_STATE_BUSY					1
 #define I2C1_STATE_ERROR				2
@@ -36,5 +37,7 @@ extern uint32_t I2C1_WaitEndTransfer (uint32_t timeout);
 extern void I2C1_IRQHandler (void);
 
 #endif//__ASSEMBLER__
+
+#endif//_USE_I2C1_
 
 #endif//_I2C1_H_

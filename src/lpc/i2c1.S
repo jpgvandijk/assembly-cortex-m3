@@ -8,6 +8,8 @@
 			.syntax		unified
 
 			#include	"i2c1.h"
+			
+			#ifdef		_USE_I2C1_
 
 
 
@@ -144,6 +146,9 @@ I2C1_Init:
 			str			r1, [r0, (PINMODE_OD0 - LPC_PIN)]
 
 			@ Enable interrupt in the NVIC
+			movs		r0, I2C1_IRQn
+			movs		r1, CONFIG_PriorityI2C1
+			bl			NVIC_IRQSetPriority
 			movs		r0, I2C1_IRQn
 			bl			NVIC_IRQEnable
 
@@ -454,3 +459,6 @@ _i2c1_internal_write_buffer_:
 
 
 
+
+			#endif
+			

@@ -8,6 +8,8 @@
 			.syntax		unified
 
 			#include	"touch.h"
+			
+			#ifdef		_USE_TOUCH_
 
 
 
@@ -168,3 +170,6 @@ _touch_read_data_:
 
 
 
+
+			#endif
+			

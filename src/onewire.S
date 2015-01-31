@@ -8,6 +8,8 @@
 			.syntax		unified
 
 			#include	"onewire.h"
+			
+			#ifdef		_USE_ONEWIRE_
 
 
 
@@ -543,6 +545,9 @@ OW_Init:
 
 			@ Enable interrupt in the NVIC after clearing the pending status
 			movs		r0, OW_TimerIRQn
+			movs		r1, OW_TimerPriority
+			bl			NVIC_IRQSetPriority
+			movs		r0, OW_TimerIRQn
 			bl			NVIC_IRQClearPending
 			movs		r0, OW_TimerIRQn
 			bl			NVIC_IRQEnable
@@ -914,3 +919,5 @@ OW_CheckCRC8:
 
 
 
+
+			#endif
