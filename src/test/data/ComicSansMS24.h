@@ -7,7 +7,10 @@
 #ifndef _COMICSANSMS24_H_
 #define _COMICSANSMS24_H_
 
-static uint8_t ComicSansMS24[] __attribute__ ((section (".ext"))) = {
+// Includes
+#include "flash.h"
+
+static uint8_t ComicSansMS24[] IN_EXTERNAL_FLASH = {
 
 	// Width, height, first char, char count
 	0xFF,

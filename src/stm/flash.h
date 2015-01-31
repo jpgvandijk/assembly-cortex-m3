@@ -15,6 +15,8 @@
 
 // Definitions
 #define FLASH_BASE_ADDRESS				__ext_StartAddress
+#define FROM_EXTERNAL_FLASH(x)			((x) - FLASH_BASE_ADDRESS)
+#define IN_EXTERNAL_FLASH				__attribute__ ((section (".ext")))
 
 #ifndef __ASSEMBLER__
 

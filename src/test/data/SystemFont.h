@@ -7,7 +7,10 @@
 #ifndef _SYSTEMFONT_H_
 #define _SYSTEMFONT_H_
 
-static uint8_t SystemFont[] __attribute__ ((section (".ext"))) = {
+// Includes
+#include "flash.h"
+
+static uint8_t SystemFont[] IN_EXTERNAL_FLASH = {
 
 	// Width, height, first char, char count
 	0x08,

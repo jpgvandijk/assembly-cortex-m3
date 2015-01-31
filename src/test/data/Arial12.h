@@ -7,7 +7,10 @@
 #ifndef _ARIAL12_H_
 #define _ARIAL12_H_
 
-static uint8_t Arial12[] __attribute__ ((section (".ext"))) = {
+// Includes
+#include "flash.h"
+
+static uint8_t Arial12[] IN_EXTERNAL_FLASH = {
 
 	// Width, height, first char, char count
 	0xFF,

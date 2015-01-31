@@ -7,7 +7,10 @@
 #ifndef _CALIBRI80_H_
 #define _CALIBRI80_H_
 
-static uint8_t Calibri80[] __attribute__ ((section (".ext"))) = {
+// Includes
+#include "flash.h"
+
+static uint8_t Calibri80[] IN_EXTERNAL_FLASH = {
 
 	// Width, height, first char, char count
 	0xFF,

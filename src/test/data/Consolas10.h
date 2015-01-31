@@ -7,7 +7,10 @@
 #ifndef _CONSOLAS10_H_
 #define _CONSOLAS10_H_
 
-static uint8_t Consolas10[] __attribute__ ((section (".ext"))) = {
+// Includes
+#include "flash.h"
+
+static uint8_t Consolas10[] IN_EXTERNAL_FLASH = {
 
 	// Width, height, first char, char count
 	0x06,
