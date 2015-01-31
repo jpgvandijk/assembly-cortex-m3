@@ -31,30 +31,9 @@ main:
 			bl			SystemInitClock
 			bl			SystemGetClock
 
-			@ Enable required GPIO
-			movs		r0, PERIPHERAL_AFIO
-			bl			SystemEnablePeripheral
-			movs		r0, PERIPHERAL_IOPA
-			bl			SystemEnablePeripheral
-			movs		r0, PERIPHERAL_IOPB
-			bl			SystemEnablePeripheral
-			movs		r0, PERIPHERAL_IOPC
-			bl			SystemEnablePeripheral
-			movs		r0, PERIPHERAL_IOPD
-			bl			SystemEnablePeripheral
-			movs		r0, PERIPHERAL_IOPE
-			bl			SystemEnablePeripheral
-
 			@ Branch to the test application
 			@bl			DEBUG_HeapTest
-			@bl			DEBUG_HeapTestMerge
-			@bl			onewire_test
-			@bl			spi1_flash_test
-			@bl			tft_test
-			@bl			touch_test
-			@bl			sdcard_test
-			@bl			buzzer_test
-			@bl			enc_test
+			bl			DEBUG_HeapTestMerge
 
 			@ Enter an infinite loop in case the test application returns
 			b			.
