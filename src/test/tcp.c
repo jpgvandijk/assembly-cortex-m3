@@ -4,10 +4,10 @@
 *
 ************************************************************************************/
 
-#ifdef STM
-
 // Includes
 #include "tcp.h"
+
+#ifdef _USE_TCP_
 
 // Global variables
 static uint8_t TCP_ClientState = TCP_CLIENT_STATE_CLOSED;
@@ -65,13 +65,6 @@ void TCP_HandleClient (void)
 	}
 }
 
-void TCP_HandleClientRequest (void)
-{
-	// Write request starting at (ETH_TCP_OPTIONS)
-	FLASH_ReadBytes(request - FLASH_BASE_ADDRESS, &ETH_Buffer[ETH_TCP_OPTIONS], WEB_REQUEST_SIZE);
-	ETH_SendTCPData(WEB_REQUEST_SIZE, 0);
-}
-
 void TCP_HandleServer (void)
 {
 	// Determine TCP header and payload length
@@ -94,33 +87,9 @@ void TCP_HandleServer (void)
 
 			// Acknowledge and start sending data
 			ETH_SendTCP(payloadLength ? payloadLength : 1, ETH_TCP_FLAGS_ACK);
-			TCP_HandleServerRequest(headerLength);
+			TCP_HandleServerRequest(headerLength, payloadLength);
 		}
 	}
 }
 
-void TCP_HandleServerRequest (uint8_t headerLength)
-{
-	// Local variables
-	uint32_t i;
-
-	// Analyse data starting at (ETH_TCP_SRC_PORT + headerLength) with size (payloadLength)
-	uint8_t * check = (uint8_t *) "GET ";
-	for (i = 0; i < 4; i++)
-		if (ETH_Buffer[ETH_TCP_SRC_PORT + headerLength + i] != check[i])
-			return;
-
-	// Write response starting at (ETH_TCP_OPTIONS)
-	uint8_t * data = webpage - FLASH_BASE_ADDRESS;
-	uint32_t length = WEB_WEBPAGE_SIZE;
-	while (length > 1460) {
-		FLASH_ReadBytes(data, &ETH_Buffer[ETH_TCP_OPTIONS], 1460);
-		ETH_SendTCPData(1460, 0);
-		data += 1460;
-		length -= 1460;
-	}
-	FLASH_ReadBytes(data, &ETH_Buffer[ETH_TCP_OPTIONS], length);
-	ETH_SendTCPData(length, 1);
-}
-
-#endif//STM
+#endif//_USE_TCP_

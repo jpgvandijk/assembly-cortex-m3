@@ -4,12 +4,11 @@
 *
 ************************************************************************************/
 
-#ifdef STM
-
 // Includes
 #include <stdint.h>
 #include "stm32f103ve.h"
 #include "kernel.h"
+#include "config.h"
 #include "system.h"
 #include "spi1.h"
 #include "flash.h"
@@ -17,7 +16,11 @@
 #include "enc28j60.h"
 #include "ethernet.h"
 #include "tcp.h"
-#include "board.h"
+#include "http.h"
+#include "http_config.h"
+#include "webserver.h"
+#include "controls_handler.h"
+#include "data/Web.h"
 
 // Function prototypes
 void TaskENC (uint32_t arg);
@@ -26,9 +29,18 @@ void TaskENC (uint32_t arg);
 const KERNEL_TaskDescriptor TaskDescriptor_TaskENC = {TaskENC, 0, (KERNEL_MinimumTaskStackSpace + 1024), 0, "ENC"};
 
 // Main
-void enc_test (void)
+void main (void)
 {
-	// Enable the DMA1
+	// Init the system clock
+	SystemInitClock();
+	
+	// Enable the peripherals
+	SystemEnablePeripheral(PERIPHERAL_AFIO);
+	SystemEnablePeripheral(PERIPHERAL_IOPA);
+	SystemEnablePeripheral(PERIPHERAL_IOPB);
+	SystemEnablePeripheral(PERIPHERAL_IOPC);
+	SystemEnablePeripheral(PERIPHERAL_IOPD);
+	SystemEnablePeripheral(PERIPHERAL_IOPE);
 	SystemEnablePeripheral(PERIPHERAL_DMA1);
 
 	// Init the FLASH chip and SPI module
@@ -50,6 +62,12 @@ void enc_test (void)
 
 void TaskENC (uint32_t arg)
 {
+	// FIXME: initialize the controls
+	Controls_InitHandler();
+
+	// Initialize the webpages
+	HTTP_Init();
+
 	// Get exclusive access to the SPI module
 	SPI1_GetExclusiveAccess(FLASH_SPI_BAUDRATE);
 
@@ -82,4 +100,18 @@ void TaskENC (uint32_t arg)
 	SPI1_ClearExclusiveAccess();
 }
 
-#endif//STM
+void TCP_HandleClientRequest (void)
+{
+	// Write request starting at (ETH_TCP_OPTIONS)
+	FLASH_ReadBytes(WEB_REQUEST_ADDRESS, &ETH_Buffer[ETH_TCP_OPTIONS], WEB_REQUEST_SIZE);
+	ETH_SendTCPData(WEB_REQUEST_SIZE, 0);
+}
+
+void TCP_HandleServerRequest (uint32_t headerLength, uint32_t payloadLength)
+{
+	// Analyse data starting at (ETH_TCP_SRC_PORT + headerLength) with size (payloadLength)
+	// Write response starting at (ETH_TCP_OPTIONS)
+	HTTP_Page * page = HTTP_AnalyzeRequest(ETH_Buffer + ETH_TCP_SRC_PORT + headerLength, payloadLength);
+	HTTP_SendPage(page);
+	Page_ActionHandler(page);
+}

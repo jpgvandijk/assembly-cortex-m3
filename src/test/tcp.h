@@ -9,11 +9,10 @@
 
 // Includes
 #include <stdint.h>
-#include "stm32f103ve.h"
 #include "ethernet.h"
-#include "flash.h"
-#include "board.h"
-#include "data/Web.h"
+#include "config.h"
+
+#ifdef _USE_TCP_
 
 // Definitions
 #define TCP_CLIENT_STATE_CLOSED			0
@@ -21,11 +20,15 @@
 #define TCP_CLIENT_STATE_OPEN			2
 #define TCP_CLIENT_STATE_RESET			3
 
+// Callback functions
+extern void TCP_HandleClientRequest (void);
+extern void TCP_HandleServerRequest (uint32_t headerLength, uint32_t payloadLength);
+
 // Function prototypes
 void TCP_ActiveOpenClient (void);
 void TCP_HandleClient (void);
-void TCP_HandleClientRequest (void);
 void TCP_HandleServer (void);
-void TCP_HandleServerRequest (uint8_t headerLength);
+
+#endif//_USE_TCP_
 
 #endif//_TCP_H_
